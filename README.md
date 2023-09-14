@@ -56,3 +56,7 @@ EXPOSE 22
 CMD ["startxfce4"]
 
 ```
+
+```
+docker run -it --rm -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -p 2222:22 --name my-gui-container gui-container
+```

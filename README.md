@@ -189,3 +189,75 @@ CMD ["/startup.sh"]
 
 
 ```
+
+```
+# Use the official Ubuntu as the base image
+FROM ubuntu:latest
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    xfce4 \
+    xfce4-terminal \
+    xterm \
+    xfonts-base \
+    novnc \
+    websockify \
+    supervisor \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Expose ports for NoVNC (6080) and SSH (22)
+EXPOSE 6080
+
+# Set up NoVNC
+ENV DISPLAY=:0 \
+    VNC_PORT=5900 \
+    NOVNC_PORT=6080 \
+    VNC_PASSWORD=password
+
+# Set up supervisor to run the necessary services
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Download noVNC web client
+RUN mkdir -p /opt/noVNC/utils/websockify && \
+    curl -Lo- https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar xz --strip 1 -C /opt/noVNC && \
+    curl -Lo- https://github.com/novnc/websockify/archive/v0.10.0.tar.gz | tar xz --strip 1 -C /opt/noVNC/utils/websockify && \
+    chmod +x -R /opt/noVNC/utils
+
+# Start supervisor when the container starts
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+```
+
+```
+[supervisord]
+nodaemon=true
+
+[program:xfce4]
+command=startxfce4
+autostart=true
+autorestart=true
+
+[program:websockify]
+command=/opt/noVNC/utils/websockify/run 6080 localhost:5900 --web /opt/noVNC --wrap-mode=ignore
+autostart=true
+autorestart=true
+```
+
+```
+{
+  "name": "Ubuntu with GUI and NoVNC",
+  "dockerFile": "Dockerfile",
+  "service": "ubuntu-novnc-gui",
+  "extensions": [
+    "ms-vscode-remote.remote-containers"
+  ],
+  "forwardPorts": [6080],
+  "overrideCommand": false,
+  "settings": {
+    "terminal.integrated.shell.linux": "/bin/bash"
+  },
+  "postCreateCommand": "docker run -d -p 6080:6080 -v /dev/shm:/dev/shm ubuntu-novnc-gui",
+  "workspaceFolder": "/workspace"
+}
+```

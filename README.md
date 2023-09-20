@@ -155,3 +155,27 @@ EXPOSE 6080
 # Start xfce4 and x11vnc
 CMD ["startxfce4"]
 ```
+```
+# Use the official Ubuntu base image
+FROM ubuntu:20.04
+
+# Install LXDE, X11, and VNC
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    lxde-core \
+    lxterminal \
+    tightvncserver \
+    wget
+
+# Download noVNC
+RUN mkdir -p /opt/novnc && \
+    wget -O - https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar xz --strip 1 -C /opt/novnc
+
+# Expose port for VNC and noVNC
+EXPOSE 5901
+EXPOSE 6080
+
+# Run the VNC server and noVNC
+CMD ["/bin/bash", "-c", "vncserver :1 -geometry 1280x720 -depth 24 && /opt/novnc/utils/launch.sh --vnc localhost:5901"]
+
+```

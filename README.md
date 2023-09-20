@@ -261,3 +261,10 @@ autorestart=true
   "workspaceFolder": "/workspace"
 }
 ```
+```
+# Start the NoVNC and Websockify servers (add this to the end of the Dockerfile)
+RUN mkdir -p /opt/noVNC/utils/websockify && \
+    curl -Lo- https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar xz --strip 1 -C /opt/noVNC && \
+    curl -Lo- https://github.com/novnc/websockify/archive/v0.10.0.tar.gz | tar xz --strip 1 -C /opt/noVNC/utils/websockify && \
+    chmod +x -R /opt/noVNC/utils
+```

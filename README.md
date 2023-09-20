@@ -123,3 +123,35 @@ EXPOSE 22
 CMD ["startxfce4"]
 
 ```
+
+
+```
+# Use Ubuntu as the base image
+FROM ubuntu:latest
+
+# Set non-interactive mode for apt-get
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary packages
+RUN apt-get update && apt-get install -y \
+    xfce4 \
+    xfce4-terminal \
+    xterm \
+    novnc \
+    x11vnc \
+    && apt-get clean
+
+# Set up a password for VNC access
+RUN mkdir -p ~/.vnc && x11vnc -storepasswd your_password ~/.vnc/passwd
+
+# Set up noVNC
+RUN mkdir -p /opt/novnc \
+    && ln -s /usr/share/novnc/vnc.html /opt/novnc/index.html
+
+# Expose VNC and noVNC ports
+EXPOSE 5900
+EXPOSE 6080
+
+# Start xfce4 and x11vnc
+CMD ["startxfce4"]
+```

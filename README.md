@@ -156,26 +156,36 @@ EXPOSE 6080
 CMD ["startxfce4"]
 ```
 ```
-# Use the official Ubuntu base image
+# Use the official Ubuntu 20.04 base image
 FROM ubuntu:20.04
 
-# Install LXDE, X11, and VNC
+# Install necessary packages
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    lxde-core \
-    lxterminal \
-    tightvncserver \
-    wget
+    xfce4 \
+    xfce4-goodies \
+    x11vnc \
+    novnc \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Download noVNC
-RUN mkdir -p /opt/novnc && \
-    wget -O - https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar xz --strip 1 -C /opt/novnc
+# Set the VNC password (change 'your_password' to your desired password)
+RUN x11vnc -storepasswd your_password /etc/x11vnc.pass
 
-# Expose port for VNC and noVNC
-EXPOSE 5901
+# Create a startup script
+RUN echo "#!/bin/sh" > /startup.sh && \
+    echo "x11vnc -display :0 -rfbauth /etc/x11vnc.pass -forever -usepw -create" >> /startup.sh && \
+    echo "Xvfb :0 -screen 0 1024x768x16 &" >> /startup.sh && \
+    echo "DISPLAY=:0 startxfce4 &" >> /startup.sh && \
+    echo "sleep 2" >> /startup.sh && \
+    echo "websockify -D --web /usr/share/novnc/ --cert /etc/novnc-selfsigned.pem 6080 localhost:5900" >> /startup.sh && \
+    chmod +x /startup.sh
+
+# Expose ports for VNC and noVNC
+EXPOSE 5900
 EXPOSE 6080
 
-# Run the VNC server and noVNC
-CMD ["/bin/bash", "-c", "vncserver :1 -geometry 1280x720 -depth 24 && /opt/novnc/utils/launch.sh --vnc localhost:5901"]
+# Start the startup script
+CMD ["/startup.sh"]
+
 
 ```

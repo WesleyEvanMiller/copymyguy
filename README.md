@@ -268,3 +268,70 @@ RUN mkdir -p /opt/noVNC/utils/websockify && \
     curl -Lo- https://github.com/novnc/websockify/archive/v0.10.0.tar.gz | tar xz --strip 1 -C /opt/noVNC/utils/websockify && \
     chmod +x -R /opt/noVNC/utils
 ```
+```
+# Use the official Ubuntu 20.04 as the base image
+FROM ubuntu:20.04
+
+# Set environment variables to prevent interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update the package lists and install dependencies
+RUN apt-get update && \
+    apt-get install -y \
+    wget \
+    libx11-xcb1 \
+    libxtst6 \
+    libnss3 \
+    libxss1 \
+    libasound2 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libxkbcommon-x11-0 \
+    libgtk-3-0 \
+    libgdk-pixbuf2.0-0 \
+    libgbm1 \
+    libnotify4 \
+    libgconf-2-4 \
+    libxss1 \
+    libasound2 \
+    libxtst6 \
+    libx11-xcb1 \
+    libgtk2.0-0 \
+    libxkbfile1 \
+    libsecret-1-0 \
+    libnss3 \
+    libxss1 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libxtst6 \
+    libegl1-mesa \
+    libgl1-mesa-glx \
+    libegl1-mesa-drivers \
+    libegl1 \
+    libegl-mesa0 \
+    libxrandr2 \
+    xdg-utils \
+    libxcomposite1 \
+    libcap2
+
+# Download and install GitKraken
+RUN wget https://release.gitkraken.com/linux/gitkraken-amd64.deb && \
+    dpkg -i gitkraken-amd64.deb && \
+    apt-get install -f -y && \
+    rm gitkraken-amd64.deb
+
+# Cleanup to reduce the image size
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Set the entry point for GitKraken
+ENTRYPOINT ["gitkraken"]
+
+# Expose a port if GitKraken requires it (check GitKraken documentation)
+# EXPOSE 8080
+
+# Run GitKraken as a non-root user (recommended for security, but may require additional configuration)
+# Replace '1000' with your user's UID and '1000' with your user's GID
+# USER 1000:1000
+```

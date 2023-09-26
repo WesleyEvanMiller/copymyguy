@@ -335,3 +335,53 @@ ENTRYPOINT ["gitkraken"]
 # Replace '1000' with your user's UID and '1000' with your user's GID
 # USER 1000:1000
 ```
+
+```
+# Use Ubuntu as the base image
+FROM ubuntu:latest
+
+# Set non-interactive mode for package installations
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary dependencies for running a graphical environment and VNC
+RUN apt-get update && apt-get install -y \
+    xorg xserver-xorg-video-dummy xinit \
+    xfce4 xfce4-terminal xfce4-taskmanager \
+    tightvncserver novnc websockify supervisor \
+    wget curl
+
+# Download and install Lens
+RUN wget https://github.com/lensapp/lens/releases/download/{VERSION}/Lens-{VERSION}.linux.AppImage && \
+    chmod +x Lens-{VERSION}.linux.AppImage && \
+    mv Lens-{VERSION}.linux.AppImage /usr/local/bin/lens
+
+# Configure VNC server
+RUN mkdir ~/.vnc && \
+    echo "startxfce4 &" > ~/.vnc/xstartup && \
+    chmod +x ~/.vnc/xstartup
+
+# Expose VNC port
+EXPOSE 5901
+
+# Expose noVNC web interface port
+EXPOSE 6080
+
+# Create a supervisord configuration
+RUN echo "[supervisord]\n\
+nodaemon=true\n\
+\n\
+[program:xvfb]\n\
+command=Xvfb :1 -screen 0 1024x768x16\n\
+\n\
+[program:x11vnc]\n\
+command=x11vnc -display :1 -rfbport 5901 -noxrecord -noxfixes -noxdamage -forever\n\
+\n\
+[program:novnc]\n\
+command=/usr/share/novnc/utils/launch.sh --vnc localhost:5901 --listen 6080\n\
+autostart=true\n\
+autorestart=true\n\
+redirect_stderr=true" > /etc/supervisor/conf.d/supervisord.conf
+
+# Start supervisord
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+```

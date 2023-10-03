@@ -413,3 +413,48 @@ EXPOSE 6080
 # Start NoVNC and Xfce desktop
 CMD ["/bin/bash", "-c", "Xvfb :1 -screen 0 1920x1080x16 & x11vnc -display :1 -nopw -listen 0.0.0.0 -forever & /opt/novnc/utils/launch.sh --vnc localhost:5900 --listen 6080"]
 ```
+
+
+```
+# Use the official Ubuntu 20.04 image as the base image
+FROM ubuntu:20.04
+
+# Set environment variables to avoid interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+# Update the package list and install dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    python3-venv \
+    python3-pip \
+    wget \
+    tightvncserver \
+    xvfb \
+    fluxbox \
+    x11vnc \
+    novnc \
+    supervisor \
+    && apt-get clean
+
+# Clone the MuhammedKlakan/openlens repository
+RUN git clone https://github.com/MuhammedKlakan/openlens.git /opt/openlens
+
+# Expose ports for noVNC and VNC server
+EXPOSE 8080
+EXPOSE 5901
+
+# Configure the VNC server (set a password)
+RUN mkdir -p ~/.vnc && echo "password" | vncpasswd -f > ~/.vnc/passwd && chmod 600 ~/.vnc/passwd
+
+# Create a startup script for VNC
+RUN echo "#!/bin/bash" > /opt/startup.sh && \
+    echo "x11vnc -display :1 -usepw -forever &" >> /opt/startup.sh && \
+    echo "/usr/bin/novnc --listen 8080 --vnc localhost:5901 &" >> /opt/startup.sh && \
+    chmod +x /opt/startup.sh
+
+# Start the VNC server and noVNC on container startup
+CMD ["/opt/startup.sh"]
+```
+```
+```

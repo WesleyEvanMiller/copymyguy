@@ -385,3 +385,31 @@ redirect_stderr=true" > /etc/supervisor/conf.d/supervisord.conf
 # Start supervisord
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
 ```
+```
+# Use the official Ubuntu 20.04 base image
+FROM ubuntu:20.04
+
+# Set non-interactive mode during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install required packages
+RUN apt-get update && \
+    apt-get install -y xfce4 xfce4-goodies x11vnc xvfb wget unzip novnc git libgtk2.0-0 libnotify4 libgconf-2-4 libnss3 libxss1 libasound2 && \
+    apt-get clean
+
+# Download noVNC
+RUN mkdir -p /opt/novnc && \
+    wget -qO- https://github.com/novnc/noVNC/archive/v1.2.0.tar.gz | tar xz --strip 1 -C /opt/novnc
+
+# Install GitKraken
+RUN wget -qO- https://release.gitkraken.com/linux/gitkraken-amd64.deb -O /tmp/gitkraken.deb && \
+    dpkg -i /tmp/gitkraken.deb && \
+    apt-get install -f -y && \
+    rm /tmp/gitkraken.deb
+
+# Expose port for NoVNC (6080) and SSH (22 if needed)
+EXPOSE 6080
+
+# Start NoVNC and Xfce desktop
+CMD ["/bin/bash", "-c", "Xvfb :1 -screen 0 1920x1080x16 & x11vnc -display :1 -nopw -listen 0.0.0.0 -forever & /opt/novnc/utils/launch.sh --vnc localhost:5900 --listen 6080"]
+```

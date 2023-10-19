@@ -516,3 +516,49 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/magit
 CMD ["emacs", "--eval", "(magit-status)"]
 
 ```
+```
+;; Set your preferred package repositories (Melpa and Melpa Stable)
+(require 'package)
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("melpa-stable" . "https://stable.melpa.org/packages/"))
+      package-archive-priorities '(("melpa" . 10)
+                                   ("melpa-stable" . 5)))
+
+;; Initialize the package system
+(package-initialize)
+
+;; Ensure use-package is installed (a popular package for package management)
+(unless (package-installed-p 'use-package)
+  (package-refresh-contents)
+  (package-install 'use-package))
+(require 'use-package)
+
+;; Set up proxy settings for HTTP and HTTPS
+;; Replace 'proxy_server_address' and 'proxy_server_port' with your proxy server information
+(setq url-proxy-services
+      '(("http" . "http://proxy_server_address:proxy_server_port")
+        ("https" . "http://proxy_server_address:proxy_server_port")))
+
+;; Define no_proxy exceptions for local and private network addresses and .devjones.com domains
+(setq url-proxy-services
+      '(("no_proxy" . "127.0.0.1\\|localhost\\|192.168.0.0/16\\|.devjones.com")))
+
+;; Add any other custom settings and configurations below this line
+
+;; Example: Set your default font
+;; (when (display-graphic-p)
+;;   (set-face-attribute 'default nil :font "Source Code Pro-12"))
+
+;; Example: Enable line numbers
+;; (global-linum-mode t)
+
+;; Example: Configure a theme (install the theme first)
+;; (use-package dracula-theme
+;;   :ensure t
+;;   :config
+;;   (load-theme 'dracula t))
+
+;; Your custom configurations go here
+
+;; Don't forget to save your `init.el` file after making changes.
+```

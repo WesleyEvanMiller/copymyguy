@@ -492,3 +492,27 @@ RUN apt-get clean
 CMD ["emacs", "--eval", "(magit-status)"]
 
 ```
+
+```
+# Use an Ubuntu base image
+FROM ubuntu:latest
+
+# Update package repositories and install required packages
+RUN apt-get update && apt-get upgrade -y
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y emacs-nox git build-essential
+
+# Clone the Magit GitHub repository
+RUN git clone https://github.com/magit/magit /root/magit
+
+# Build and install Magit
+WORKDIR /root/magit
+RUN make
+RUN make install
+
+# Clean up unnecessary files
+RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /root/magit
+
+# Start Emacs with Magit when the container runs
+CMD ["emacs", "--eval", "(magit-status)"]
+
+```

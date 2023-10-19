@@ -457,4 +457,38 @@ RUN echo "#!/bin/bash" > /opt/startup.sh && \
 CMD ["/opt/startup.sh"]
 ```
 ```
+# Use an Alpine Linux base image
+FROM alpine:latest
+
+# Update package repositories and install required packages
+RUN apk update && apk upgrade
+RUN apk add emacs-nox git
+
+# Install Magit using the Emacs package manager
+RUN emacs --batch --eval "(require 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" --eval "(package-initialize)" --eval "(package-refresh-contents)" --eval "(package-install 'magit)"
+
+# Clean up unnecessary files
+RUN rm -rf /var/cache/apk/*
+
+# Start Emacs with Magit when the container runs
+CMD ["emacs", "--eval", "(magit-status)"]
+
+```
+
+```
+# Use an Ubuntu base image
+FROM ubuntu:latest
+
+# Update package repositories and install required packages
+RUN apt-get update && apt-get install -y emacs-nox git
+
+# Install Magit using the Emacs package manager
+RUN emacs --batch --eval "(require 'package)" --eval "(add-to-list 'package-archives '(\"melpa\" . \"https://melpa.org/packages/\") t)" --eval "(package-initialize)" --eval "(package-refresh-contents)" --eval "(package-install 'magit)"
+
+# Clean up after package installation
+RUN apt-get clean
+
+# Start Emacs with Magit when the container runs
+CMD ["emacs", "--eval", "(magit-status)"]
+
 ```

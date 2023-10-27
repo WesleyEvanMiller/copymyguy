@@ -562,3 +562,6 @@ CMD ["emacs", "--eval", "(magit-status)"]
 
 ;; Don't forget to save your `init.el` file after making changes.
 ```
+```
+kubectl get pods --all-namespaces -o go-template='{{range .items}}{{.metadata.name}} {{.metadata.namespace}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}' | awk -v date="$(date -u +'%Y-%m-%dT%H:%M:%SZ' --date='1 hour ago')" '$3 > date {print $1 " in namespace " $2}'
+```

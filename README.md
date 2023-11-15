@@ -562,6 +562,123 @@ CMD ["emacs", "--eval", "(magit-status)"]
 
 ;; Don't forget to save your `init.el` file after making changes.
 ```
+
+```
+Courses designed to prepare you for the AZ-104 Microsoft Azure Administrator exam typically cover a comprehensive range of topics that align with the exam objectives. These courses aim to provide both theoretical knowledge and practical skills required to pass the exam and perform effectively as an Azure Administrator.
+
+Here's an overview of what these courses generally cover, corresponding to the key domains of the AZ-104 exam:
+
+1. **Manage Azure Identities and Governance (15-20%)**:
+    - Understanding Azure Active Directory (AD), managing Azure AD objects (users, groups, and devices).
+    - Implementing and managing hybrid identities.
+    - Using role-based access control (RBAC) to assign permissions.
+    - Managing subscriptions, governance policies, and role assignments.
+
+2. **Implement and Manage Storage (10-15%)**:
+    - Securing storage accounts.
+    - Managing storage (Blob Storage, File Shares, and storage synchronization).
+    - Configuring Azure files and implementing Azure backup for various workloads.
+
+3. **Deploy and Manage Azure Compute Resources (25-30%)**:
+    - Creating and configuring Azure Virtual Machines (VMs) for scalability and high availability.
+    - Automating deployment and configuration of VMs using Azure Resource Manager templates.
+    - Creating and managing containers in Azure (using Azure Kubernetes Service (AKS) or Azure Container Instances).
+    - Configuring and managing Azure Web Apps.
+
+4. **Configure and Manage Virtual Networking (30-35%)**:
+    - Implementing and managing virtual networks, including network security groups and application security groups.
+    - Configuring private and public DNS zones.
+    - Implementing secure access (VPNs and ExpressRoute).
+    - Configuring load balancers.
+    - Monitoring and troubleshooting network-related issues.
+    - Integrating on-premises networks with Azure virtual networks.
+
+5. **Monitor and Back Up Azure Resources (10-15%)**:
+    - Using Azure Monitor for monitoring and reporting.
+    - Implementing backup and recovery solutions in Azure.
+    - Using tools like Azure Backup and Azure Site Recovery.
+
+### Types of Courses and Resources:
+
+- **Online Self-Paced Courses**: These include video lectures, reading materials, labs, and quizzes, offered by platforms like Microsoft Learn, Udemy, Coursera, Pluralsight, and others.
+- **Instructor-Led Training**: Offered by Microsoft or authorized training partners, these courses are conducted by certified trainers and often include interactive sessions, hands-on labs, and direct instructor support.
+- **Books and Study Guides**: Various publishers offer study guides and books that cover the AZ-104 exam objectives in detail.
+- **Practice Tests and Labs**: These are crucial for understanding the exam format and practicing real-world scenarios. Many courses include practice tests and lab exercises.
+
+### Additional Tips:
+
+- **Hands-On Experience**: Theoretical knowledge is important, but practical experience is crucial. Try to spend time on the Azure portal, experimenting with different services.
+- **Stay Updated**: Azure services are constantly evolving, so make sure your learning materials are up-to-date with the latest Azure features and exam requirements.
+- **Microsoft Documentation**: Leveraging Microsoft's own documentation can be highly beneficial as it's the most up-to-date source of information about Azure services.
+
+Always check the latest exam outline from the official Microsoft certification page, as the exam objectives might change over time.
+```
 ```
 kubectl get pods --all-namespaces -o go-template='{{range .items}}{{.metadata.name}} {{.metadata.namespace}} {{.metadata.creationTimestamp}}{{"\n"}}{{end}}' | awk -v date="$(date -u +'%Y-%m-%dT%H:%M:%SZ' --date='1 hour ago')" '$3 > date {print $1 " in namespace " $2}'
+```
+```
+The AZ-900: Microsoft Azure Fundamentals exam is an entry-level certification intended for individuals who are just beginning to work with cloud-based solutions and services or are new to Azure. Courses designed to prepare for the AZ-900 exam typically cover foundational level knowledge of cloud services and how those services are provided with Microsoft Azure.
+
+The AZ-900 exam covers several key areas:
+
+1. **Describe Cloud Concepts (20-25%)**:
+    - Understanding the benefits and considerations of using cloud services.
+    - Differentiating between categories of cloud services (IaaS, PaaS, SaaS).
+    - Understanding the differences between types of cloud computing (public, private, hybrid).
+
+2. **Describe Core Azure Services (15-20%)**:
+    - Core Azure architectural components (regions, resource groups, Azure Resource Manager, Virtual Networks, etc.).
+    - Core Azure services and products (Azure Virtual Machines, Azure Web Apps, Azure SQL Database, Azure Blob Storage, etc.).
+    - Azure solutions like Internet of Things (IoT), Big Data, Machine Learning, and Serverless.
+
+3. **Describe Core Solutions and Management Tools on Azure (10-15%)**:
+    - Types of Azure management tools and technologies (Azure PowerShell, Azure CLI, Azure Portal, Azure Advisor).
+    - Azure solutions for database management, compute, networking, storage, etc.
+
+4. **Describe General Security and Network Security Features (10-15%)**:
+    - Azure Security Center, Azure Secure Score.
+    - Identity services (Azure Active Directory, Multi-Factor Authentication).
+    - Network security features (Network Security Groups, Application Security Groups, Azure Firewall, etc.).
+
+5. **Describe Identity, Governance, Privacy, and Compliance Features (20-25%)**:
+    - Identity services including Azure AD.
+    - Governance features like resource locks, tags, Azure Policy, Azure Blueprints.
+    - Privacy and compliance resources (Trust Center, Azure compliance documentation).
+
+6. **Describe Azure Cost Management and Service Level Agreements (10-15%)**:
+    - Planning and managing costs (Azure Pricing Calculator, Total Cost of Ownership Calculator, Azure Cost Management).
+    - Azure Service Level Agreements (SLAs) and service lifecycles.
+
+### Types of Courses and Learning Materials:
+
+- **Online Self-Paced Courses**: These are available on platforms like Microsoft Learn, Coursera, Udemy, Pluralsight, and LinkedIn Learning. They often include video lectures, interactive quizzes, and sometimes hands-on labs.
+- **Instructor-Led Training**: Microsoft and its partners offer instructor-led training courses that can be taken in a classroom setting or online.
+- **Books and Study Guides**: Various publishers offer study guides for the AZ-900 exam. These can be a good supplement to online courses.
+- **Microsoft Documentation and Resources**: Microsoft provides extensive documentation and learning paths on their own website, which are invaluable resources for understanding Azure services.
+- **Practice Exams**: These can help familiarize you with the exam format and types of questions you can expect.
+
+### Additional Tips:
+
+- **Understand the Basics**: Make sure you understand basic cloud concepts and how they are implemented in Azure.
+- **Practical Experience**: Even for a fundamental exam, having hands-on experience with the Azure portal and services can be very helpful.
+- **Stay Updated**: The cloud landscape changes rapidly, so ensure your study material is up to date.
+
+Remember, the AZ-900 is a fundamentals exam, so the focus is on understanding basic concepts and services in Azure rather than deep technical expertise. It's an excellent starting point for anyone looking to work with Azure or cloud services in general.
+```
+```
+Certainly, a comparison between the AZ-900 (Microsoft Azure Fundamentals) and AZ-104 (Microsoft Azure Administrator) exams can be presented in a table format. The comparison will focus on the target audience, exam content, difficulty level, and the primary focus of each exam.
+
+| Criteria               | AZ-900: Azure Fundamentals                          | AZ-104: Azure Administrator                         |
+|------------------------|----------------------------------------------------|----------------------------------------------------|
+| **Target Audience**    | Beginners to Azure, non-technical roles, those new to cloud computing | IT professionals with some Azure experience, those responsible for implementing, managing, and monitoring an organization’s Azure environment |
+| **Focus**              | Basic understanding of cloud concepts, core Azure services, security, privacy, compliance, and trust, Azure pricing, SLAs, and lifecycle | Managing Azure identities and governance, implementing and managing storage, deploying and managing Azure compute resources, configuring and managing virtual networking, monitoring and backup of Azure resources |
+| **Content Depth**      | Foundational, broad overview of cloud concepts and Azure services | Deep dive into specific Azure administration tasks |
+| **Prerequisites**      | None, introductory level | Some knowledge and experience in Azure, understanding of core Azure services, workloads, security, and governance |
+| **Difficulty Level**   | Entry-level, more conceptual | Intermediate, requires practical experience in Azure administration |
+| **Ideal For**          | Those seeking to validate foundational level knowledge of cloud services and Azure | Azure administrators, system admins, network admins, and IT professionals with a focus on Azure |
+| **Exam Format**        | Multiple-choice, scenario-based questions, and case studies | Multiple-choice, multiple response, scenario-based questions, and case studies |
+| **Primary Objective**  | To understand cloud concepts, core Azure services, security, privacy, pricing, and support | To manage Azure identities, governance, storage, compute, and virtual networks effectively |
+| **Practical Component**| Not focused on hands-on experience | Strong emphasis on practical, hands-on experience and knowledge |
+
+This table highlights the key differences between the two exams. The AZ-900 is an entry-level exam suitable for those new to Azure or cloud technology in general, focusing on basic concepts and knowledge. In contrast, the AZ-104 is more advanced, targeting IT professionals who actively manage and administer Azure cloud services and infrastructure.
 ```

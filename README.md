@@ -794,3 +794,6 @@ Deploying a Kubernetes (K8s) cluster on Microsoft Azure Stack HCI involves sever
 
 The specific steps and configurations can vary based on the version of Azure Stack HCI, AKS, and the specific requirements of your environment. Always refer to the latest Microsoft documentation for Azure Stack HCI and AKS for detailed guidance and best practices.
 ```
+```
+https://petri.com/what-is-azure-stack-hci/
+```

@@ -797,3 +797,278 @@ The specific steps and configurations can vary based on the version of Azure Sta
 ```
 https://petri.com/what-is-azure-stack-hci/
 ```
+
+```
+Wesley Miller
+Wesley Miller  11:21 AM
+Redhat Openshift Question
+Can Openshift build and manage AKS clusters or only ARO clusters?
+Matt Hargrave sent the following message at 11:23 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:23 AM
+ACM (Advanced Cluster Management) can manage AKS clusters but it can not build them
+Wesley Miller sent the following messages at 11:24 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:24 AM
+is that something you plan to add some day?
+Also are there additional limitations or is it fully featured management like it was an ARO cluster
+Matt Hargrave sent the following messages at 11:24 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:24 AM
+I am not sure I have seen that on the roadmap.  Let me ask someone who is more in the know
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:25 AM
+ACM uses native K8 APIs, so it should be able to do most anything.
+Wesley Miller sent the following message at 11:26 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:26 AM
+and I mean like an AKS and ARO cluster can be managed easily and similarly
+Matt Hargrave sent the following message at 11:26 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:26 AM
+yes
+Wesley Miller sent the following message at 11:26 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:26 AM
+I guess what I mean to say is. Does Openshift as a whole work better with ARO than AKS from a management perspective
+Matt Hargrave sent the following messages at 11:26 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:26 AM
+ARO is Openshift
+ACM (Advanced Cluster Management) is an add-on product that can be used to manage Openshift and other Kuberentes clusters
+https://access.redhat.com/articles/6968787
+
+Red Hat Advanced Cluster Management for Kubernetes 2.6 Support Matrix - Red Hat Customer Portal
+access.redhat.com • 2 min read
+That is a matrix of supported features for the various hypervisor's k8 products/services
+Wesley Miller sent the following message at 11:32 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:32 AM
+Yeah I knew ARO was Azure Redhat Openshift. Okay let me look at some of this before I ask anything else.
+Matt Hargrave sent the following messages at 11:35 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:35 AM
+No worries.  I can happily connect you with the General Dynamics account team if that would be helpful
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:36 AM
+So looking at that matrix and after speaking with one of our experts.  It looks like ACM can't build the managed services at all, even the Openshift ones (ARO, ROSA, etc).  You can of course import them once they are built however
+Wesley Miller sent the following message at 11:43 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:43 AM
+I think that was all I needed I appreciate the help!
+Matt Hargrave sent the following message at 11:43 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:43 AM
+no problem.  Out of curiosity how did you you end up landing on me?  Happy to help just surprised since we don't  seem to have any common connections
+Wesley Miller sent the following messages at 11:44 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:44 AM
+Ha I think my linkedin is out of date. We were on the edward jones call together yesterday.
+or at least you were one of the invited individuals, but I thought I remembered you
+Matt Hargrave sent the following message at 11:45 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:45 AM
+Oooh right! yeah it shows you with General Dynamics
+Wesley Miller sent the following message at 11:46 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:46 AM
+Yeah I don't use LinkedIn really at all. I got the premium trial just to ask a couple things directly. Its hard this week to get a hold of people at EJ.
+Matt Hargrave sent the following message at 11:46 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:46 AM
+yeah my pervious job before Red Hat I started 2 weeks before Christmas.  It was a slow start
+
+You can also email me at: matt.hargrave@redhat.com
+Wesley Miller sent the following message at 11:47 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:47 AM
+I was confused on which tool we were completely evaluating because of how everyone was wording things here. Again most of my experience is managed k8s before I joined EJ a couple months ago
+Matt Hargrave sent the following message at 11:48 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:48 AM
+Yeah happy to try to clear up some things.
+Wesley Miller sent the following messages at 11:49 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:49 AM
+So I don't know much about Openshift and ACM yet but I am trying to research it. Some of the docs had me feeling like it doesn't create AKS (which you confirmed) and it made me worried that it doesn't fully manage managed k8s like it can Openshift
+AKS clusters^
+Matt Hargrave sent the following message at 11:52 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:52 AM
+Yeah that page should provide those details.  From a quick glance it looks like ACM only gives you about 80-90% of the feature set with non-openshift clusters
+Wesley Miller sent the following message at 11:53 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:53 AM
+I will review that thoroughly if there is any other docs that might be nice to read let me know
+Matt Hargrave sent the following message at 11:53 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:53 AM
+Hit me up if you want to dive into anything else.  Happy to get a call with just the technical folks and leave off the sales guys
+Wesley Miller sent the following message at 11:54 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:54 AM
+Great yeah. I would prefer to maybe get some knowledge on my own first and they probably wouldnt like me reaching out individually. I get that vibe at least.
+Matt Hargrave sent the following messages at 11:57 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:57 AM
+No worries.  Ill see if I can find any other interesting documentation and send it your way.
+View Matt’s profileMatt Hargrave
+Matt Hargrave  11:58 AM
+https://developers.redhat.com/
+This is probably one of the best technical resources.  It has less "sales fluff" than the marketing material
+
+Red Hat Developer Homepage | Red Hat Developer
+developers.redhat.com • 1 min read
+you can even spin up openshift sandboxes and labs
+Wesley Miller sent the following message at 12:01 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:01 PM
+so the creation and management of these clusters if they arent on prem will have to be on us rather than ACM
+Matt Hargrave sent the following messages at 12:02 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:02 PM
+just the creation/destruction/upgrade
+for the managed services
+You can create/destroy/upgrade Openshift clusters in Azure using ACM that are non managed service.  IE it would use the IaaS to build the systems that would run Openshift
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:12 PM
+Just to try to clear everything up
+ACM can not create/upgrade/destroy any public cloud managed service. Those can be imported after the fact and managed
+
+The only limitation for non Openshift K8s imported into ACM appear to only be around a few Operator management features
+TODAY
+Wesley Miller sent the following message at 3:12 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  3:12 AM
+Okay so a couple more thoughts: ACM is the tool that is installed on an OpenShift cluster (and has to be an OpenShift cluster), but if it was never used to manage an OpenShift cluster and only other the variants of Kubernetes (Core, AKS, etc.) we wouldn’t notice any lack of features? (Not including the provisioning non-managed openshift cluster feature) I would say and you’d probably agree though that embracing Opensource completely would be in our best interest if we take this route.
+Matt Hargrave sent the following message at 9:37 AM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  9:37 AM
+So for the first part yes ACM is only supported on Openshift itself.  So if I understand what you are saying, is if you never run Openshift would it make more sense to run ACM's upstream?
+
+So that gets into the value of a subscription, or really why would someone buy from Red Hat instead of running the community version.  Bear with me, this is kind of along winded discussion
+
+Opensource is great, but its kind of wild west.  Also while the code itself is free, the building and maintaining aspect of it isn't, that requires resources (mostly human).  So from a business aspect you have to decide if you want to focus on maintaining the underlying platform and tools or business value. 
+
+If something breaks when running the community version you are at the mercy of the community to try to solve that problem.  If its a bug in the code there is no guarantee its fixed, at least not in a timely matter.  Also things like security patches are not backported so you always will have to upgrade to get those which could be problematic on the environment.   For large organizations like Edward Jones that is a lot of risk to take on.  So the value from a subscription gives you support with SLAs from the people who actually build the software.  We build it and make sure its QAed and patches are backported.
+Wesley Miller sent the following messages at 11:57 AM
+View Wesley’s profileWesley Miller
+Wesley Miller  11:57 AM
+Those points I agree with. I think a better way to maybe clarify what I said is, if we never run openshift (for some odd hypothetical reason), does ACM still feel full featured and work as well as the opposite hypothetical scenario of only running Openshift (on-prem, in the cloud, etc.)
+
+To help illustrate, as I could be using poor terminology, we might not be able to buy into Openshift initially. We will have on-prem k8s core and AKS clusters. Both may have to be imported into ACM for a time rather than creating an Openshift version and we may never be able to adopt ARO for the cloud side. I know from our previous discussions that any K8s can be managed fine, but what will our experience be if ACM is optimized for Openshift.(Edited)
+
+View Wesley’s profileWesley Miller
+Wesley Miller  12:01 PM
+“ACM is optimized for OpenShift” may be conjecture because that’s only what I’ve heard people say, but logically it would make sense for it to have been designed that way.
+Matt Hargrave sent the following message at 12:04 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:04 PM
+so ACM is only certified to run on Openshift, but I think in that scenario you might not actually have to pay for Openshift  because the ACM subs would cover the underlying OCP
+Wesley Miller sent the following message at 12:05 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:05 PM
+I meant to add excluding the one Openshift cluster that ACM is running on^
+Matt Hargrave sent the following message at 12:06 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:06 PM
+right.  In which ACM would do most things for all the other K8s clusters.  According to that matrix only a few features most of which are around operator governance are not supported
+Wesley Miller sent the following message at 12:06 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:06 PM
+Okay cool. Yeah from a cost perspective I’m not too concerned (Edited)
+
+Matt Hargrave sent the following message at 12:06 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:06 PM
+of course using something like ArgoCD (which is what Openshift uses for gitops) you could probably cover those gap
+Wesley Miller sent the following message at 12:08 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:08 PM
+Ah okay yeah. Hopefully, this wasn’t a waste of your time of course, but it’s helpful to know given how long it takes EJ to migrate or change clusters types(Edited)
+
+Matt Hargrave sent the following message at 12:09 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:09 PM
+Not at all man, my entire job is to help you guys out on the technical stuff
+Wesley Miller sent the following messages at 12:12 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:12 PM
+My ideal situation in regards to adapting the Redhat ecosystem would be to use OpenShift for everything on-prem, stick with AKS in the cloud, and have that all managed by ACM. I just know we need to have ACM set up a couple months before we can effectively shift to Openshift for our other clusters
+So my questions just come from that perspective. Anyway that’s all I had for now. I’m going to dive into governance a bit and see how that works
+I really appreciate the information
+Matt Hargrave sent the following messages at 12:14 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:14 PM
+Yeah that could work.  The only downside is you that it might be tricky to move workload between the two due to how the two platforms are built
+Which may not be a use case that EJ needs anyways
+Wesley Miller sent the following message at 12:15 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:15 PM
+Which two platforms AKS and Openshift?
+Matt Hargrave sent the following messages at 12:16 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:16 PM
+yeah, so the advantage of Openshift on prem and in the cloud is you could move your workloads between those two really easily the experience and the tooling would all be the same
+Makes stuff like DR really easy
+Wesley Miller sent the following messages at 12:16 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:16 PM
+So like using ARO would allow us to do that?
+Move workloads that is
+Matt Hargrave sent the following messages at 12:17 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:17 PM
+absolutely.  Or if you didn't want to run ARO and wanted to deploy Openshift with IaaS on Azure you could do that too
+You could even span the same app across both and then use global load balancers
+Wesley Miller sent the following messages at 12:18 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:18 PM
+That’s cool but these are things only possible if everything was Openshift based. What other things like this exist if we fully embrace it?
+Might be a reason to try to use ARO idk if IaaS is the right move but it might be
+Matt Hargrave sent the following message at 12:19 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:19 PM
+No, you could still do that in theory with any K8s, but the more different it is the harder it is.  It would be a much more complex architecture to develop the app for
+Wesley Miller sent the following message at 12:19 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:19 PM
+I meant like possible for ACM to facilitate
+Matt Hargrave sent the following message at 12:19 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:19 PM
+Hard maybe on that one.
+Wesley Miller sent the following message at 12:21 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:21 PM
+I guess to help clarify for me is. Does ACM facilitate some of those or is it just a consideration given we have different platforms
+Matt Hargrave sent the following messages at 12:21 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:21 PM
+I won't say its not possible, but I think it would be more difficult than it would be worth.  You would need to invest a lot of resources to make it work that you might as well just use ARO
+ACM does help facilitate that
+Wesley Miller sent the following message at 12:21 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:21 PM
+Awesome, this is great information.
+Matt Hargrave sent the following messages at 12:22 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:22 PM
+Yeah, I would probably need to get Daniel involved to really answer some of that
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:23 PM
+He was at a customer before he came to Red Hat and built their global routing solution for doing something similar so he has really strong knowledge around that kind of thing
+Wesley Miller sent the following message at 12:27 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  12:27 PM
+Maybe it’s worth capturing this, because it seems like an important question to have an answer for. If you don’t mind I would like to save some of this conversation in my notes
+Matt Hargrave sent the following message at 12:28 PM
+View Matt’s profileMatt Hargrave
+Matt Hargrave  12:28 PM
+Absolutely
+Seen by Matt Hargrave at 12:28 PM.
+Wesley Miller sent the following messages at 7:25 PM
+View Wesley’s profileWesley Miller
+Wesley Miller  7:25 PM
+I really appreciate setting me straight on things.
+```

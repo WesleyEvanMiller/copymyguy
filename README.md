@@ -1072,3 +1072,6 @@ View Wesley’s profileWesley Miller
 Wesley Miller  7:25 PM
 I really appreciate setting me straight on things.
 ```
+```
+https://access.redhat.com/articles/6968787
+```

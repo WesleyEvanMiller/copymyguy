@@ -1087,3 +1087,9 @@ kubectl get pods --all-namespaces | awk '$4=="CrashLoopBackOff" {print $1, $2}' 
     kubectl describe pod $pod -n $ns | awk '/Events:/{flag=1;next}/^$/{flag=0}flag' | grep 'Reason:' | awk -F'Reason:' '{print $2}' | awk -F' ' '{print $1}';
 done | sort | uniq -c | sort -nr
 ```
+
+```
+kubectl get pods --all-namespaces | awk '$4=="CrashLoopBackOff" {print $1, $2}' | while read ns pod; do
+    kubectl get events --namespace $ns --field-selector involvedObject.name=$pod | tail -n +2;
+done | awk '{ $1=$2=$3=$4=""; print $0 }' | sort | uniq -c
+```

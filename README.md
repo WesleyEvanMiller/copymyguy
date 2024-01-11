@@ -1075,3 +1075,9 @@ I really appreciate setting me straight on things.
 ```
 https://access.redhat.com/articles/6968787
 ```
+
+```
+kubectl get pods --all-namespaces | awk '$4=="CrashLoopBackOff" {print $1, $2}' | while read ns pod; do
+    echo "$(kubectl describe pod $pod -n $ns | grep -m 1 'Reason' | awk '{print $2}') - Namespace: $ns, Pod: $pod";
+done | sort | uniq -c
+```

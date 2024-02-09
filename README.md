@@ -1093,3 +1093,6 @@ kubectl get pods --all-namespaces | awk '$4=="CrashLoopBackOff" {print $1, $2}' 
     kubectl get events --namespace $ns --field-selector involvedObject.name=$pod | tail -n +2;
 done | awk '{ $1=$2=$3=$4=""; print $0 }' | sort | uniq -c
 ```
+```
+kubectl get pods --all-namespaces | awk '$4 != "Running" && $4 != "Completed"'
+```

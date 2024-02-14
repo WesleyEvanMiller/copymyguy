@@ -1159,3 +1159,6 @@ kubectl get pods --namespace=<namespace> -o=jsonpath='{range .items[*]}{.metadat
 kubectl get pods --namespace=<namespace> -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{.spec.containers[*].resources.requests.memory}{"\n"}{"---"}{"\n"}'
 
 ```
+```
+kubectl get pods --namespace=<namespace> -o=jsonpath="{range .items[*]}{.metadata.name}{'\t'}{.spec.containers[*].resources.requests.cpu}{'\n'}" && kubectl top pods --namespace=<namespace> --containers=true | awk 'NR > 1 {print $2}'
+```

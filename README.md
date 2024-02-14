@@ -1096,3 +1096,66 @@ done | awk '{ $1=$2=$3=$4=""; print $0 }' | sort | uniq -c
 ```
 kubectl get pods --all-namespaces | awk '$4 != "Running" && $4 != "Completed"'
 ```
+```
+#!/bin/bash
+
+# Get list of namespaces
+namespaces=$(kubectl get namespaces -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}')
+
+# Initialize variables for total CPU and memory usage
+total_cpu=0
+total_memory=0
+
+# Loop through each namespace
+for namespace in $namespaces
+do
+    # Get CPU and memory usage for the namespace
+    usage=$(kubectl top pods --namespace="$namespace" --containers=true | tail -n +2)
+
+    # Loop through each pod's resource usage
+    while read -r line; do
+        cpu=$(echo "$line" | awk '{print $2}')
+        memory=$(echo "$line" | awk '{print $3}')
+
+        # Remove "m" suffix from memory value and convert to bytes
+        memory=$(echo "$memory" | sed 's/m//')
+        memory=$((memory * 1024 * 1024))
+
+        # Sum CPU and memory usage
+        total_cpu=$((total_cpu + ${cpu%[^0-9.]*}))
+        total_memory=$((total_memory + $memory))
+    done <<< "$usage"
+done
+
+# Convert memory usage to human-readable format
+total_memory_human=$(numfmt --to=iec --suffix=B --format="%.2f" $total_memory)
+
+# Print total resource usage
+echo "Total CPU Usage: $total_cpu millicores"
+echo "Total Memory Usage: $total_memory_human"
+chmod +x kubectl-top-totals.sh
+./kubectl-top-totals.sh
+```
+
+```
+kubectl top pods --all-namespaces --containers=true | awk 'NR > 1 {cpu += $2} END {print "Total CPU Usage:", cpu, "millicores"}'
+```
+
+```
+kubectl top pods --all-namespaces --containers=true | sort -k 2 -hr
+```
+
+```
+kubectl top pods --all-namespaces --containers=true | sort -k 3 -hr
+```
+
+```
+kubectl get pods --namespace=<namespace> -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{.spec.containers[*].resources.requests}{"\n"}{"---"}{"\n"}'
+```
+```
+kubectl get pods --namespace=<namespace> -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{.spec.containers[*].resources.requests.cpu}{"\n"}{"---"}{"\n"}'
+```
+```
+kubectl get pods --namespace=<namespace> -o=jsonpath='{range .items[*]}{.metadata.name}{"\n"}{.spec.containers[*].resources.requests.memory}{"\n"}{"---"}{"\n"}'
+
+```

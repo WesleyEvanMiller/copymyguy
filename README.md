@@ -1162,3 +1162,21 @@ kubectl get pods --namespace=<namespace> -o=jsonpath='{range .items[*]}{.metadat
 ```
 kubectl get pods --namespace=<namespace> -o=jsonpath="{range .items[*]}{.metadata.name}{'\t'}{.spec.containers[*].resources.requests.cpu}{'\n'}" && kubectl top pods --namespace=<namespace> --containers=true | awk 'NR > 1 {print $1 "\t" $2}'
 ```
+
+```
+kubectl get pods --all-namespaces -o=custom-columns=NAME:.metadata.name,NAMESPACE:.metadata.namespace,REQUESTS_CPU:.spec.containers[*].resources.requests.cpu,REQUESTS_MEMORY:.spec.containers[*].resources.requests.memory | while read -r line; do
+    pod_name=$(echo "$line" | awk '{print $1}')
+    namespace=$(echo "$line" | awk '{print $2}')
+    cpu_request=$(echo "$line" | awk '{print $3}')
+    memory_request=$(echo "$line" | awk '{print $4}')
+    cpu_usage=$(kubectl top pod "$pod_name" -n "$namespace" --containers=true | awk 'NR>1 {print $2}')
+    memory_usage=$(kubectl top pod "$pod_name" -n "$namespace" --containers=true | awk 'NR>1 {print $3}')
+    
+    cpu_request="${cpu_request//[[:blank:]]/}"
+    memory_request="${memory_request//[[:blank:]]/}"
+
+    if [[ -n "$cpu_usage" && -n "$memory_usage" ]]; then
+        echo -e "Pod: $pod_name\tNamespace: $namespace\tCPU Request: $cpu_request\tMemory Request: $memory_request\tCPU Usage: $cpu_usage\tMemory Usage: $memory_usage"
+    fi
+done | sort -k3,4 -nr | head
+```

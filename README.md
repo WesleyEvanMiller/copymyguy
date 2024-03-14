@@ -1201,3 +1201,32 @@ index="your_kubernetes_events_index" sourcetype="your_kubernetes_events_sourcety
       async: 60
       poll: 0
 ```
+```
+---
+- hosts: all
+  become: true
+  become_method: pbrun
+  gather_facts: no
+
+  tasks:
+    - name: Execute ping in the background
+      ansible.builtin.shell: |
+        ping -c 10 x.x.x.x > /tmp/ping_output.txt 2>&1
+      async: 60
+      poll: 0
+      register: ping_result
+
+    - name: Wait for the ping command to finish
+      ansible.builtin.async_status:
+        jid: "{{ ping_result.ansible_job_id }}"
+      register: job_result
+      until: job_result.finished
+      retries: 30
+      delay: 2
+
+    - name: Fetch the ping command output
+      ansible.builtin.fetch:
+        src: "/tmp/ping_output.txt"
+        dest: "./{{ inventory_hostname }}_ping_output.txt"
+        flat: yes
+```

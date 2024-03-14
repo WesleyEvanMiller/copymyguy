@@ -1187,4 +1187,6 @@ index="your_kubernetes_events_index" sourcetype="your_kubernetes_events_sourcety
 | eval end=now()
 | where _time >= start AND _time <= end
 | table _time, event_type, reason, message
+
+| where _time >= strptime("2023-03-01T00:00:00", "%Y-%m-%dT%H:%M:%S") AND _time <= strptime("2023-03-02T00:00:00", "%Y-%m-%dT%H:%M:%S")
 ```

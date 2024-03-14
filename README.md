@@ -1190,3 +1190,14 @@ index="your_kubernetes_events_index" sourcetype="your_kubernetes_events_sourcety
 
 | where _time >= strptime("2023-03-01T00:00:00", "%Y-%m-%dT%H:%M:%S") AND _time <= strptime("2023-03-02T00:00:00", "%Y-%m-%dT%H:%M:%S")
 ```
+
+```
+- hosts: all
+  become: true
+  become_method: pbrun
+  tasks:
+    - name: Execute ping in the background
+      ansible.builtin.shell: "ping x.x.x.x > /tmp/ping_output.txt 2>&1 &"
+      async: 60
+      poll: 0
+```

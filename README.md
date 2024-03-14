@@ -1180,3 +1180,11 @@ kubectl get pods --all-namespaces -o=custom-columns=NAME:.metadata.name,NAMESPAC
     fi
 done | sort -k3,4 -nr | head
 ```
+
+```
+index="your_kubernetes_events_index" sourcetype="your_kubernetes_events_sourcetype"
+| eval start=relative_time(now(), "-1h")
+| eval end=now()
+| where _time >= start AND _time <= end
+| table _time, event_type, reason, message
+```

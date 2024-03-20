@@ -1230,3 +1230,8 @@ index="your_kubernetes_events_index" sourcetype="your_kubernetes_events_sourcety
         dest: "./{{ inventory_hostname }}_ping_output.txt"
         flat: yes
 ```
+
+```
+kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/key.pem --namespace=my-namespace
+
+```

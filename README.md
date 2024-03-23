@@ -1235,3 +1235,17 @@ index="your_kubernetes_events_index" sourcetype="your_kubernetes_events_sourcety
 kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/key.pem --namespace=my-namespace
 
 ```
+
+```
+- name: Remove packages
+  yum:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ packages_to_remove }}"
+  register: yum_output
+  tags: pkgremove
+
+- name: Print yum task output
+  debug:
+    var: yum_output
+```

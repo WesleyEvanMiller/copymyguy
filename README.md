@@ -1272,3 +1272,16 @@ kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/
     - "'Failed' in yum_result.results | map(attribute='stdout') | join(' ')"
 
 ```
+
+```
+- name: Check for running yum process
+  shell: "pgrep -f 'yum' > /dev/null || echo 'yum not running'"
+  register: yum_check
+  ignore_errors: true
+  changed_when: false
+  
+- name: Wait a bit for yum to finish
+  pause:
+    seconds: 60
+  when: yum_check.stdout != 'yum not running'
+```

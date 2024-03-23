@@ -1249,3 +1249,8 @@ kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/
   debug:
     var: yum_output
 ```
+
+```
+- name: Write yum output to local file
+  local_action: copy content="{{ yum_output }}" dest="./yum_output.log"
+```

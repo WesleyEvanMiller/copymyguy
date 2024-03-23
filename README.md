@@ -1262,3 +1262,13 @@ kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/
   register: yum_result
   ignore_errors: yes
 ```
+
+```
+- name: Fail playbook if yum output indicates failure
+  fail:
+    msg: "Yum task failed, check output above."
+  when: 
+    - yum_task.results is defined
+    - "'Failed' in yum_task.results | map(attribute='stdout') | join(' ')"
+
+```

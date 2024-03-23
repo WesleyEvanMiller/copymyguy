@@ -1254,3 +1254,11 @@ kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/
 - name: Write yum output to local file
   local_action: copy content="{{ yum_output }}" dest="./yum_output.log"
 ```
+
+```
+- name: Ensure packages are absent with a timeout
+  command: "timeout 300s yum remove -y {{ item }}"
+  loop: "{{ packages_to_remove }}"
+  register: yum_result
+  ignore_errors: yes
+```

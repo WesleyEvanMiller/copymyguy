@@ -1285,3 +1285,7 @@ kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/
     seconds: 60
   when: yum_check.stdout != 'yum not running'
 ```
+```
+curl -H "Accept: application/vnd.github.v3.diff" \
+https://api.github.com/repos/user/repo1/compare/master...user:repo2/master > github_changes.diff
+```

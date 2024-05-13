@@ -1382,3 +1382,47 @@ echo "Working with subscriptions: ${subscriptions[*]}"
 # Rest of the script where you use these subscriptions
 
 ```
+```
+#!/bin/bash
+
+# Define a list of subscriptions
+subscriptions=("SubscriptionID1" "SubscriptionID2" "SubscriptionID3")
+
+# Loop through each subscription
+for subscription in "${subscriptions[@]}"; do
+    echo "Checking subscription: $subscription"
+    
+    # Set the current subscription
+    az account set --subscription "$subscription"
+
+    # List all VMSS in the current subscription
+    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup}" --output json)
+
+    # Check each VMSS for any VMs in a failed state
+    echo "Checking VMSS in subscription $subscription:"
+    for row in $(echo "${vmss_list}" | jq -r '.[] | @base64'); do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+
+        VMSS_NAME=$(_jq '.name')
+        RESOURCE_GROUP=$(_jq '.resourceGroup')
+
+        echo "Analyzing VMSS: $VMSS_NAME in Resource Group: $RESOURCE_GROUP"
+
+        # List instances, check their states, and attempt to retrieve zone information
+        instances_details=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].{instanceId:instanceId, provisioningState:provisioningState, zone:zone}" --output json)
+
+        # Filter for failed instances and display relevant details including zone
+        failed_instances=$(echo "$instances_details" | jq -r '.[] | select(.provisioningState == "Failed") | "\(.instanceId) in Zone: \(.zone // "No zone assigned")"')
+
+        if [ -n "$failed_instances" ]; then
+            echo "Failed instances in $VMSS_NAME:"
+            echo "$failed_instances"
+        else
+            echo "No failed instances found in $VMSS_NAME."
+        fi
+    done
+done
+
+```

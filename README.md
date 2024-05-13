@@ -1289,3 +1289,83 @@ kubectl create secret tls my-tls-secret --cert=/path/to/cert.pem --key=/path/to/
 curl -H "Accept: application/vnd.github.v3.diff" \
 https://api.github.com/repos/user/repo1/compare/master...user:repo2/master > github_changes.diff
 ```
+
+```
+#!/bin/bash
+
+# Define a list of subscriptions
+subscriptions=("SubscriptionID1" "SubscriptionID2" "SubscriptionID3")
+
+# Loop through each subscription
+for subscription in "${subscriptions[@]}"; do
+    echo "Checking subscription: $subscription"
+    
+    # Set the current subscription
+    az account set --subscription "$subscription"
+
+    # List all VMSS in the current subscription
+    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup}" --output json)
+
+    # Check each VMSS for any VMs in a failed state and their zones
+    echo "VMSS with failed VMs in subscription $subscription:"
+    for row in $(echo "${vmss_list}" | jq -r '.[] | @base64'); do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+
+        VMSS_NAME=$(_jq '.name')
+        RESOURCE_GROUP=$(_jq '.resourceGroup')
+
+        # List instances, check their states, and retrieve zone information
+        instances_details=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].{instanceId:instanceId, provisioningState:provisioningState, zone:zone}" --output json)
+        
+        # Filter for failed instances and display relevant details including zone
+        echo "$instances_details" | jq -r '.[] | select(.provisioningState == "Failed") | "Instance ID: \(.instanceId), State: \(.provisioningState), Zone: \(.zone)"'
+    done
+done
+```
+```
+#!/bin/bash
+
+# Define a list of subscriptions
+subscriptions=("SubscriptionID1" "SubscriptionID2" "SubscriptionID3")
+
+# Loop through each subscription
+for subscription in "${subscriptions[@]}"; do
+    echo "Checking subscription: $subscription"
+    
+    # Set the current subscription
+    az account set --subscription "$subscription"
+
+    # List all VMSS in the current subscription
+    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup, zones:zones}" --output json)
+
+    # Check each VMSS for VM presence in each zone
+    echo "VMSS with missing VMs in any zone in subscription $subscription:"
+    for row in $(echo "${vmss_list}" | jq -r '.[] | @base64'); do
+        _jq() {
+            echo ${row} | base64 --decode | jq -r ${1}
+        }
+
+        VMSS_NAME=$(_jq '.name')
+        RESOURCE_GROUP=$(_jq '.resourceGroup')
+        ZONES=($(_jq '.zones | @csv' | tr -d '"' | tr ',' ' '))
+
+        # List instances and their zones
+        instances_zones=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].{instanceId:instanceId, zone:zone}" --output json)
+        
+        # Check for VM presence in each configured zone
+        missing_zones=()
+        for zone in "${ZONES[@]}"; do
+            if ! echo "$instances_zones" | jq -r '.[].zone' | grep -q "$zone"; then
+                missing_zones+=("$zone")
+            fi
+        done
+
+        if [ ${#missing_zones[@]} -ne 0 ]; then
+            echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP is missing VMs in zones: ${missing_zones[*]}"
+        fi
+    done
+done
+
+```

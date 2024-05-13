@@ -1369,3 +1369,16 @@ for subscription in "${subscriptions[@]}"; do
 done
 
 ```
+
+```
+#!/bin/bash
+
+# Automatically fetch subscription IDs and convert them into a Bash array
+readarray -t subscriptions < <(az account list --query "[].id" -o tsv)
+
+# Now subscriptions array contains all subscription IDs
+echo "Working with subscriptions: ${subscriptions[*]}"
+
+# Rest of the script where you use these subscriptions
+
+```

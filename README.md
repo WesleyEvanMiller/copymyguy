@@ -1536,3 +1536,47 @@ done
 echo "VMSS zone report generated in $output_file."
 
 ```
+```
+#!/bin/bash
+
+# Define a list of subscriptions
+subscriptions=("SubscriptionID1" "SubscriptionID2" "SubscriptionID3")
+
+# Output file
+output_file="vmss_zone_sku_report.txt"
+echo "Generating VMSS zone and SKU report..." > "$output_file"
+
+# Loop through each subscription
+for subscription in "${subscriptions[@]}"; do
+    echo "Checking subscription: $subscription" >> "$output_file"
+    
+    # Set the current subscription
+    az account set --subscription "$subscription"
+
+    # List all VMSS in the current subscription
+    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup, zones:zones}" --output json)
+
+    # Check each VMSS for VM presence in each zone
+    echo "VMSS details in subscription $subscription:" >> "$output_file"
+    for row in $(echo "${vmss_list}" | jq -c '.[]'); do
+        VMSS_NAME=$(echo "$row" | jq -r '.name')
+        RESOURCE_GROUP=$(echo "$row" | jq -r '.resourceGroup')
+        ZONES=$(echo "$row" | jq -r '.zones | if . == null then [] else . end | @csv' | tr -d '"')
+
+        # List instances and their zones and SKUs
+        instances_info=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].{zone:zone, sku:sku.name}" --output json)
+        zone_sku_pairs=$(echo "$instances_info" | jq -r 'group_by(.zone) | map({zone: .[0].zone, skus: map(.sku) | unique})')
+
+        # Output zone and SKU pairs
+        echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP" >> "$output_file"
+        for pair in $(echo "${zone_sku_pairs}" | jq -c '.[]'); do
+            zone=$(echo "$pair" | jq -r '.zone')
+            skus=$(echo "$pair" | jq -r '.skus | join(", ")')
+            echo "  Zone: $zone, SKU(s): $skus" >> "$output_file"
+        done
+    done
+done
+
+echo "VMSS zone and SKU report generated in $output_file."
+
+```

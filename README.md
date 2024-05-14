@@ -1467,3 +1467,50 @@ for subscription in "${subscriptions[@]}"; do
 done
 
 ```
+```
+#!/bin/bash
+
+# Define a list of subscriptions
+subscriptions=("SubscriptionID1" "SubscriptionID2" "SubscriptionID3")
+
+# Loop through each subscription
+for subscription in "${subscriptions[@]}"; do
+    echo "Checking subscription: $subscription"
+    
+    # Set the current subscription
+    az account set --subscription "$subscription"
+
+    # List all VMSS in the current subscription and decode zone data correctly
+    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup, zones:zones}" --output json)
+
+    # Check each VMSS for VM presence in each zone
+    echo "VMSS with missing VMs in any zone in subscription $subscription:"
+    for row in $(echo "${vmss_list}" | jq -c '.[]'); do
+        VMSS_NAME=$(echo "$row" | jq -r '.name')
+        RESOURCE_GROUP=$(echo "$row" | jq -r '.resourceGroup')
+        ZONES=$(echo "$row" | jq -r '.zones | if . == null then "" else @csv end')
+
+        # Only process if zones are not empty
+        if [ -n "$ZONES" ]; then
+            ZONES_ARRAY=($(echo $ZONES | tr ',' ' ' | tr -d '"'))
+            # List instances and their zones
+            instances_zones=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].{instanceId:instanceId, zone:zone}" --output json)
+
+            # Check for VM presence in each configured zone
+            missing_zones=()
+            for zone in "${ZONES_ARRAY[@]}"; do
+                if ! echo "$instances_zones" | jq -r '.[].zone' | grep -q "$zone"; then
+                    missing_zones+=("$zone")
+                fi
+            done
+
+            if [ ${#missing_zones[@]} -gt 0 ]; then
+                echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP is missing VMs in zones: ${missing_zones[*]}"
+            fi
+        else
+            echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP has no configured zones."
+        fi
+    done
+done
+
+```

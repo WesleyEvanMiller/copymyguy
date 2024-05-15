@@ -1598,23 +1598,23 @@ for subscription in "${subscriptions[@]}"; do
     # Set the current subscription
     az account set --subscription "$subscription"
 
-    # List all VMSS in the current subscription
-    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup, zones:zones}" --output json)
+    # List all VMSS in the current subscription including their SKU
+    vmss_list=$(az vmss list --query "[].{name:name, resourceGroup:resourceGroup, zones:zones, sku:sku.name}" --output json)
 
     # Check each VMSS for VM presence in each zone
     echo "VMSS with missing VMs in any zone in subscription $subscription:" >> "$output_file"
     for row in $(echo "${vmss_list}" | jq -c '.[]'); do
         VMSS_NAME=$(echo "$row" | jq -r '.name')
         RESOURCE_GROUP=$(echo "$row" | jq -r '.resourceGroup')
+        SKU=$(echo "$row" | jq -r '.sku')
         ZONES=$(echo "$row" | jq -r '.zones | if . == null then [] else . end | @csv' | tr -d '"')
 
         # Convert CSV to array
         IFS=',' read -ra ZONES_ARRAY <<< "$ZONES"
         
-        # List instances and their zones and SKUs
-        instances_info=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].{zone:zone, sku:sku.name}" --output json)
-        instances_zones=$(echo "$instances_info" | jq -r 'map(select(.zone != null)) | .[].zone | unique | @csv' | tr -d '"')
-        instance_skus=$(echo "$instances_info" | jq -r 'map(select(.sku != null)) | .[].sku | unique | @csv' | tr -d '"')
+        # List instances and their zones
+        instances_info=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].zone" --output json)
+        instances_zones=$(echo "$instances_info" | jq -r 'map(select(. != null)) | unique | @csv' | tr -d '"')
 
         # Convert CSV to array for instances_zones
         IFS=',' read -ra INSTANCES_ZONES_ARRAY <<< "$instances_zones"
@@ -1628,12 +1628,13 @@ for subscription in "${subscriptions[@]}"; do
         done
 
         if [ ${#missing_zones[@]} -gt 0 ]; then
-            echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP is missing VMs in zones: ${missing_zones[*]}. SKU(s): ${instance_skus}" >> "$output_file"
+            echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP with SKU: $SKU is missing VMs in zones: ${missing_zones[*]}." >> "$output_file"
         else
-            echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP has VMs in all configured zones. SKU(s): ${instance_skus}" >> "$output_file"
+            echo "VMSS Name: $VMSS_NAME in Resource Group: $RESOURCE_GROUP with SKU: $SKU has VMs in all configured zones." >> "$output_file"
         fi
     done
 done
 
 echo "VMSS zone report generated in $output_file."
+
 ```

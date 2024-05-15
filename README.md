@@ -1638,3 +1638,9 @@ done
 echo "VMSS zone report generated in $output_file."
 
 ```
+```
+# Correct way to list instances and their zones, assuming 'zones' is the correct property
+instances_info=$(az vmss list-instances --resource-group $RESOURCE_GROUP --name $VMSS_NAME --query "[].zones" --output json)
+instances_zones=$(echo "$instances_info" | jq -r 'add | map(select(. != null)) | unique | @csv' | tr -d '"')
+
+```

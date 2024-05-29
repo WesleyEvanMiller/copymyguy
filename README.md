@@ -1647,23 +1647,51 @@ instances_zones=$(echo "$instances_info" | jq -r 'add | map(select(. != null)) |
 ```
 #!/bin/bash
 
-# Get pods stuck in initializing state
-pods=$(kubectl get pods --all-namespaces -o json | jq -r '.items[] | select(.status.initContainerStatuses and .status.initContainerStatuses[].state.waiting) | [.metadata.namespace, .metadata.name] | @tsv')
+# Get all pods that are not in Running or Succeeded state
+pods=$(kubectl get pods --all-namespaces -o json | jq -r '.items[] | select(.status.phase != "Running" and .status.phase != "Succeeded") | [.metadata.namespace, .metadata.name] | @tsv')
 
-# Loop through each pod to find its owner and restart the deployment if it's stuck
+if [ -z "$pods" ]; then
+  echo "No pods found in non-Running or non-Succeeded state."
+  exit 0
+fi
+
+# Loop through each pod to find its owner and restart the deployment if needed
 echo -e "NAMESPACE\tDEPLOYMENT\tPOD"
 echo "$pods" | while read -r namespace pod; do
+  echo "Processing pod $pod in namespace $namespace"
+
   # Get the owner reference of the pod
   owner=$(kubectl get pod $pod -n $namespace -o jsonpath='{.metadata.ownerReferences[0].name}' 2>/dev/null)
   ownerKind=$(kubectl get pod $pod -n $namespace -o jsonpath='{.metadata.ownerReferences[0].kind}' 2>/dev/null)
 
-  # Check if the owner is a deployment
-  if [ "$ownerKind" == "Deployment" ]; then
+  if [ -z "$owner" ]; then
+    echo "Owner not found for pod $pod in namespace $namespace"
+    continue
+  fi
+
+  echo "Owner of pod $pod is $owner ($ownerKind)"
+
+  # If the owner is a ReplicaSet, find its Deployment
+  if [ "$ownerKind" == "ReplicaSet" ]; then
+    deployment=$(kubectl get replicaset $owner -n $namespace -o jsonpath='{.metadata.ownerReferences[0].name}' 2>/dev/null)
+    deploymentKind=$(kubectl get replicaset $owner -n $namespace -o jsonpath='{.metadata.ownerReferences[0].kind}' 2>/dev/null)
+    if [ "$deploymentKind" == "Deployment" ]; then
+      echo -e "$namespace\t$deployment\t$pod"
+      
+      # Perform a rolling restart of the deployment
+      kubectl rollout restart deployment $deployment -n $namespace
+    else
+      echo "Owner of ReplicaSet is not a Deployment, skipping..."
+    fi
+  elif [ "$ownerKind" == "Deployment" ]; then
     echo -e "$namespace\t$owner\t$pod"
     
     # Perform a rolling restart of the deployment
     kubectl rollout restart deployment $owner -n $namespace
+  else
+    echo "Owner is not a Deployment or ReplicaSet, skipping..."
   fi
 done
+
 
 ```

@@ -1713,3 +1713,22 @@ echo "$deployments" | while read -r namespace name replicas readyReplicas update
   echo -e "$namespace\t$name\t$replicas\t$readyReplicas\t$updatedReplicas"
 done
 ```
+
+```
+#!/bin/bash
+
+# Get all deployments across all namespaces
+deployments=$(kubectl get deployments --all-namespaces -o json | jq -r '.items[] | select(.status.replicas != .status.readyReplicas or .status.replicas != .status.updatedReplicas) | [.metadata.namespace, .metadata.name, .status.replicas, .status.readyReplicas, .status.updatedReplicas] | @tsv')
+
+if [ -z "$deployments" ]; then
+  echo "All deployments are fully scaled."
+  exit 0
+fi
+
+# Print the deployments that are not fully scaled
+echo -e "NAMESPACE\tDEPLOYMENT\tREPLICAS\tREADY\tUPDATED"
+echo "$deployments" | while read -r namespace name replicas readyReplicas updatedReplicas; do
+  echo -e "$namespace\t$name\t$replicas\t$readyReplicas\t$updatedReplicas"
+done
+
+```

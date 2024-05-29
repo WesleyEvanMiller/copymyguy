@@ -1725,10 +1725,13 @@ if [ -z "$deployments" ]; then
   exit 0
 fi
 
-# Print the deployments that are not fully scaled
+# Print the deployments that are not fully scaled and perform a rolling restart
 echo -e "NAMESPACE\tDEPLOYMENT\tREPLICAS\tREADY\tUPDATED"
 echo "$deployments" | while read -r namespace name replicas readyReplicas updatedReplicas; do
   echo -e "$namespace\t$name\t$replicas\t$readyReplicas\t$updatedReplicas"
+  
+  # Perform a rolling restart of the deployment
+  kubectl rollout restart deployment "$name" -n "$namespace"
 done
 
 ```

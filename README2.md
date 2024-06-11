@@ -37,3 +37,7 @@ $newPSModulePath = "$currentPSModulePath;$newModulePath"
 ```
 Install-Module -Name Az.Automanage -Scope AllUsers
 ```
+```
+# Install Azure CLI using PowerShell
+Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -ArgumentList '/i AzureCLI.msi /quiet' -Wait; Remove-Item .\AzureCLI.msi
+```

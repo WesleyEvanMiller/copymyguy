@@ -19,3 +19,21 @@ rm -f glibc-2.28-r0.apk glibc-bin-2.28-r0.apk
 /usr/glibc-compat/bin/ldd --version
 
 ```
+```
+$newModulePath = "D:\PowerShellModules"
+if (-not (Test-Path -Path $newModulePath)) {
+    New-Item -Path $newModulePath -ItemType Directory
+}
+```
+```
+$currentPSModulePath = [Environment]::GetEnvironmentVariable("PSModulePath", [EnvironmentVariableTarget]::Machine)
+$newPSModulePath = "$currentPSModulePath;$newModulePath"
+[Environment]::SetEnvironmentVariable("PSModulePath", $newPSModulePath, [EnvironmentVariableTarget]::Machine)
+```
+
+```
+[Environment]::GetEnvironmentVariable("PSModulePath", [EnvironmentVariableTarget]::Machine)
+```
+```
+Install-Module -Name Az.Automanage -Scope AllUsers
+```

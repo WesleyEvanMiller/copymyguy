@@ -41,3 +41,14 @@ Install-Module -Name Az.Automanage -Scope AllUsers
 # Install Azure CLI using PowerShell
 Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi; Start-Process msiexec.exe -ArgumentList '/i AzureCLI.msi /quiet' -Wait; Remove-Item .\AzureCLI.msi
 ```
+```
+$acrName = "your_acr_name"
+$resourceGroupName = "your_resource_group_name"
+$acr = Get-AzContainerRegistry -ResourceGroupName $resourceGroupName -Name $acrName
+$acrCredentials = Get-AzContainerRegistryCredential -ResourceGroupName $resourceGroupName -Name $acrName
+```
+```
+$username = $acrCredentials.Username
+$password = ($acrCredentials.Password | ConvertTo-SecureString -AsPlainText -Force)
+docker login $acr.LoginServer -u $username -p $password
+```

@@ -147,3 +147,65 @@ pip install azure-identity==1.7.1 azure-mgmt-network==18.0.0 azure-core==1.23.1
 pip uninstall azure-identity azure-mgmt-network azure-core
 ```
 ```
+import os
+from azure.identity import DefaultAzureCredential
+from azure.mgmt.network import NetworkManagementClient
+from deepdiff import DeepDiff
+
+# Function to get the NSG
+def get_nsg(client, resource_group, nsg_name):
+    return client.network_security_groups.get(resource_group_name=resource_group, network_security_group_name=nsg_name)
+
+# Function to compare security rules
+def compare_security_rules(rules1, rules2):
+    diff = DeepDiff(rules1, rules2, ignore_order=True)
+    return diff
+
+# Function to print differences in a readable format
+def print_differences(diff, direction):
+    if diff:
+        print(f"Differences in {direction} Security Rules:")
+        for change_type, changes in diff.items():
+            print(f"  {change_type}:")
+            for change, details in changes.items():
+                print(f"    {change}: {details}")
+    else:
+        print(f"The {direction} Security Rules are identical")
+
+def main():
+    # Azure authentication
+    credential = DefaultAzureCredential()
+    subscription_id = os.environ["AZURE_SUBSCRIPTION_ID"]
+
+    # Initialize NetworkManagementClient
+    network_client = NetworkManagementClient(credential, subscription_id)
+
+    # NSG details
+    resource_group_1 = 'your_resource_group_1'
+    nsg_name_1 = 'your_nsg_name_1'
+    
+    resource_group_2 = 'your_resource_group_2'
+    nsg_name_2 = 'your_nsg_name_2'
+
+    # Get NSGs
+    nsg1 = get_nsg(network_client, resource_group_1, nsg_name_1)
+    nsg2 = get_nsg(network_client, resource_group_2, nsg_name_2)
+
+    # Extract inbound and outbound security rules
+    inbound_rules_1 = [rule.as_dict() for rule in nsg1.security_rules if rule.direction == 'Inbound']
+    outbound_rules_1 = [rule.as_dict() for rule in nsg1.security_rules if rule.direction == 'Outbound']
+    inbound_rules_2 = [rule.as_dict() for rule in nsg2.security_rules if rule.direction == 'Inbound']
+    outbound_rules_2 = [rule.as_dict() for rule in nsg2.security_rules if rule.direction == 'Outbound']
+
+    # Compare inbound and outbound rules
+    inbound_differences = compare_security_rules(inbound_rules_1, inbound_rules_2)
+    outbound_differences = compare_security_rules(outbound_rules_1, outbound_rules_2)
+
+    # Print the differences
+    print_differences(inbound_differences, "Inbound")
+    print_differences(outbound_differences, "Outbound")
+
+if __name__ == "__main__":
+    main()
+
+```

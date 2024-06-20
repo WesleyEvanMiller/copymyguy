@@ -139,4 +139,11 @@ if __name__ == "__main__":
    ```
 
 This script focuses on comparing only the inbound and outbound security rules of the specified NSGs and prints out the differences between them.
+
+```
+pip install azure-identity==1.7.1 azure-mgmt-network==18.0.0 azure-core==1.23.1
+```
+```
+pip uninstall azure-identity azure-mgmt-network azure-core
+```
 ```

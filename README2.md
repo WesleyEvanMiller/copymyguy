@@ -295,11 +295,64 @@ Feel free to modify the script according to your specific needs, such as passing
 
 ------------------------------------------
 
-You're right. Since `generate_tfvars.py` generates the `tfvars` file and `render_jinja2.py` doesn't need to parse the `tfvars` file separately, we can simplify `render_jinja2.py` by directly loading the `tfvars` values passed from the `generate_tfvars.py`. Here’s the corrected version of the scripts.
+To handle derived variables in the YAML files and ensure the script correctly renders `vars.tfvars.j2` to `vars.tfvars`, we need to update our scripts. We'll first update the `generate_variables.py` script to resolve derived variables using the Jinja2 template engine. Then we'll ensure the `render_jinja2.py` script writes the output to the correct file names.
 
-### Updated Python Script: `render_jinja2.py`
+### Python Script: `generate_variables.py`
 
-This script will now directly render Jinja2 templates using the `tfvars` values passed as arguments.
+This script will resolve derived variables using Jinja2 and save the resolved variables to a JSON file.
+
+```python
+import sys
+import os
+import yaml
+import json
+from jinja2 import Template
+
+def parse_yaml_files(yaml_files):
+    variables = {}
+    for filepath in yaml_files:
+        if filepath.endswith('.yaml') or filepath.endswith('.yml'):
+            with open(filepath, 'r') as file:
+                yaml_content = yaml.safe_load(file)
+                if isinstance(yaml_content, dict):
+                    for key, value in yaml_content.items():
+                        if key in variables:
+                            print(f"Warning: Duplicate key {key} found in {filepath}. Using the latest value.")
+                        variables[key] = value
+    return variables
+
+def resolve_derived_variables(variables):
+    resolved_variables = {}
+    for key, value in variables.items():
+        if isinstance(value, str):
+            template = Template(value)
+            resolved_value = template.render(variables)
+            resolved_variables[key] = resolved_value
+        else:
+            resolved_variables[key] = value
+    return resolved_variables
+
+def generate_variables(variables, output_file):
+    with open(output_file, 'w') as f:
+        json.dump(variables, f, indent=4)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python generate_variables.py <output_json_file> <yaml_file_1> <yaml_file_2> ...")
+        sys.exit(1)
+
+    output_json_file = sys.argv[1]
+    yaml_files = sys.argv[2:]
+
+    variables = parse_yaml_files(yaml_files)
+    resolved_variables = resolve_derived_variables(variables)
+    generate_variables(resolved_variables, output_json_file)
+    print(f"Generated {output_json_file} with variables from {yaml_files}")
+```
+
+### Python Script: `render_jinja2.py`
+
+This script will render Jinja2 templates and write the output to the correct files.
 
 ```python
 import sys
@@ -317,29 +370,24 @@ def render_template(template_dir, template_file, variables):
     rendered_content = template.render(variables)
     return rendered_content
 
-def load_tfvars(tfvars_file):
-    variables = {}
-    with open(tfvars_file) as f:
-        for line in f:
-            if '=' in line:
-                key, value = line.split('=', 1)
-                key = key.strip()
-                value = value.strip().strip('"')
-                variables[key] = value
+def load_variables(json_file):
+    with open(json_file, 'r') as f:
+        variables = json.load(f)
     return variables
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:
-        print("Usage: python render_jinja2.py <template_directory> <template_file> <tfvars_file>")
+        print("Usage: python render_jinja2.py <template_directory> <template_file> <variables_json_file>")
         sys.exit(1)
 
     template_directory = sys.argv[1]
     template_file = sys.argv[2]
-    tfvars_file = sys.argv[3]
+    json_file = sys.argv[3]
 
-    variables = load_tfvars(tfvars_file)
+    variables = load_variables(json_file)
     rendered = render_template(template_directory, template_file, variables)
-    output_file_path = os.path.join(template_directory, template_file[:-3])
+    output_file_name = template_file[:-3]  # Remove the .j2 extension
+    output_file_path = os.path.join(template_directory, output_file_name)
     
     with open(output_file_path, 'w') as output_file:
         output_file.write(rendered)
@@ -347,115 +395,9 @@ if __name__ == "__main__":
     print(f'Rendered {template_file} to {output_file_path}')
 ```
 
-### Updated Bash Script: `render_all_templates.sh`
+### Bash Script: `render_all_templates.sh`
 
-This script orchestrates the process, generating the `tfvars` file and rendering the Jinja2 templates.
-
-```bash
-#!/bin/bash
-
-# Directory containing the Jinja2 templates
-TEMPLATE_DIR="path/to/your/templates"
-# Path to the tfvars file to be generated
-TFVARS_FILE="path/to/your/variables.tfvars"
-# Directories containing YAML files
-YAML_DIRS=("path/to/your/yaml/dir1" "path/to/your/yaml/dir2")
-
-# Generate the tfvars file from the YAML files
-python generate_tfvars.py "$TFVARS_FILE" "${YAML_DIRS[@]}"
-
-# Iterate through all .j2 and .tf.j2 files in the directory
-for template_file in "$TEMPLATE_DIR"/*.{j2,tf.j2}; do
-    # Check if the file exists (in case no files match the pattern)
-    if [[ -e "$template_file" ]]; then
-        # Extract the base name of the file
-        base_name=$(basename "$template_file")
-        
-        # Render the template using the Python script
-        python render_jinja2.py "$TEMPLATE_DIR" "$base_name" "$TFVARS_FILE"
-    fi
-done
-```
-
-### Steps to Execute
-
-1. Save the updated Python scripts (`generate_tfvars.py` and `render_jinja2.py`) in your working directory.
-2. Save the updated Bash script (`render_all_templates.sh`) in your working directory.
-3. Make the Bash script executable if not already done:
-
-```sh
-chmod +x render_all_templates.sh
-```
-
-4. Run the Bash script:
-
-```sh
-./render_all_templates.sh
-```
-
-### Explanation
-
-1. **Python Script (`generate_tfvars.py`)**:
-    - Reads all YAML files from the specified directories.
-    - Extracts key-value pairs from the YAML files.
-    - Writes the key-value pairs to a `tfvars` file.
-    
-2. **Python Script (`render_jinja2.py`)**:
-    - Loads the variables from the generated `tfvars` file.
-    - Renders the Jinja2 template using the variables from the `tfvars` file.
-    
-3. **Bash Script (`render_all_templates.sh`)**:
-    - First calls the `generate_tfvars.py` script to generate the `tfvars` file using YAML files from specified directories.
-    - Then iterates through all `.j2` and `.tf.j2` files in the template directory.
-    - Calls the `render_jinja2.py` script to render each template using the generated `tfvars` file.
-
-This setup ensures that the `tfvars` file is dynamically generated based on the YAML files before rendering the Jinja2 templates, including any additional Terraform files that require Jinja2 processing.
----------------------------------
-Got it. We'll modify the script to accept a set of YAML files instead of directories. This will involve changing both the `generate_variables.py` script and the `render_all_templates.sh` script to handle individual YAML files.
-
-### Updated Python Script: `generate_variables.py`
-
-This script reads the specified YAML files, extracts key-value pairs, and generates a JSON file with the variables.
-
-```python
-import sys
-import os
-import yaml
-import json
-
-def parse_yaml_files(yaml_files):
-    variables = {}
-    for filepath in yaml_files:
-        if filepath.endswith('.yaml') or filepath.endswith('.yml'):
-            with open(filepath, 'r') as file:
-                yaml_content = yaml.safe_load(file)
-                if isinstance(yaml_content, dict):
-                    for key, value in yaml_content.items():
-                        if key in variables:
-                            print(f"Warning: Duplicate key {key} found in {filepath}. Using the latest value.")
-                        variables[key] = value
-    return variables
-
-def generate_variables(variables, output_file):
-    with open(output_file, 'w') as f:
-        json.dump(variables, f, indent=4)
-
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: python generate_variables.py <output_json_file> <yaml_file_1> <yaml_file_2> ...")
-        sys.exit(1)
-
-    output_json_file = sys.argv[1]
-    yaml_files = sys.argv[2:]
-
-    variables = parse_yaml_files(yaml_files)
-    generate_variables(variables, output_json_file)
-    print(f"Generated {output_json_file} with variables from {yaml_files}")
-```
-
-### Updated Bash Script: `render_all_templates.sh`
-
-This script orchestrates the process, generating the variables file and rendering the Jinja2 templates for `.tf` and `.tfvars` files using the specified YAML files.
+This script orchestrates the process, generating the variables file and rendering the Jinja2 templates for `.tf` and `.tfvars` files.
 
 ```bash
 #!/bin/bash
@@ -505,15 +447,17 @@ chmod +x render_all_templates.sh
 1. **Python Script (`generate_variables.py`)**:
     - Reads the specified YAML files.
     - Extracts key-value pairs from the YAML files.
-    - Writes the key-value pairs to a JSON file.
+    - Resolves derived variables using Jinja2.
+    - Writes the resolved key-value pairs to a JSON file.
     
 2. **Python Script (`render_jinja2.py`)**:
     - Loads the variables from the generated JSON file.
     - Renders the Jinja2 template using the variables from the JSON file.
+    - Writes the output to the correct file by removing the `.j2` extension from the template file name.
     
 3. **Bash Script (`render_all_templates.sh`)**:
     - First calls the `generate_variables.py` script to generate the JSON file with variables using the specified YAML files.
     - Then iterates through all `.tf.j2` and `.tfvars.j2` files in the template directory.
     - Calls the `render_jinja2.py` script to render each template using the generated JSON file with variables.
 
-This setup ensures that the variables from the specified YAML files are used to render both the `.tf` and `.tfvars` Jinja2 templates.
+This setup ensures that the variables from the specified YAML files, including derived variables, are used to render both the `.tf` and `.tfvars` Jinja2 templates, and writes the rendered content to the appropriate files.

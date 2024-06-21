@@ -209,3 +209,163 @@ if __name__ == "__main__":
     main()
 
 ```
+
+
+```
+import os
+from jinja2 import Environment, FileSystemLoader
+
+def render_templates(template_dir, output_dir, context):
+    env = Environment(loader=FileSystemLoader(template_dir))
+    
+    for template_name in os.listdir(template_dir):
+        if template_name.endswith('.j2'):
+            template = env.get_template(template_name)
+            rendered_content = template.render(context)
+            
+            output_file_path = os.path.join(output_dir, template_name[:-3])  # Remove .j2 extension
+            with open(output_file_path, 'w') as output_file:
+                output_file.write(rendered_content)
+            print(f"Rendered {template_name} to {output_file_path}")
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) < 3:
+        print("Usage: python render_templates.py <template-dir> <output-dir>")
+        sys.exit(1)
+
+    template_dir = sys.argv[1]
+    output_dir = sys.argv[2]
+    context = {}  # Add any necessary context variables here
+    
+    render_templates(template_dir, output_dir, context)
+```
+
+
+To address your requirements, you need a Python script that:
+
+1. Renders Jinja2 templates (`.j2` files) to generate Terraform configuration files.
+2. Runs `terraform plan` to compare the state against these generated configurations.
+
+Here’s how you can achieve this:
+
+### Step 1: Install Required Packages
+
+Ensure you have the necessary Python packages installed:
+
+```sh
+pip install jinja2 pyyaml
+```
+
+### Step 2: Create the Python Script
+
+The following script will:
+1. Render all Jinja2 templates in a specified directory.
+2. Save the rendered templates as Terraform configuration files.
+3. Run `terraform plan` to check the state against the generated configurations.
+
+```python
+import os
+import sys
+import yaml
+from jinja2 import Environment, FileSystemLoader
+import subprocess
+
+def render_templates(template_dir, output_dir, context):
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Setup Jinja2 environment
+    env = Environment(loader=FileSystemLoader(template_dir))
+
+    # Render each Jinja2 template in the directory
+    for template_name in os.listdir(template_dir):
+        if template_name.endswith('.j2'):
+            template = env.get_template(template_name)
+            rendered_content = template.render(context)
+            
+            # Remove the .j2 extension for the output file
+            output_file_name = template_name[:-3]
+            output_file_path = os.path.join(output_dir, output_file_name)
+
+            with open(output_file_path, 'w') as output_file:
+                output_file.write(rendered_content)
+    
+    print(f"Templates rendered to {output_dir}")
+
+def load_yaml_context(yaml_file):
+    with open(yaml_file, 'r') as file:
+        return yaml.safe_load(file)
+
+def run_terraform_plan(directory):
+    try:
+        subprocess.run(["terraform", "init"], check=True, cwd=directory)
+        subprocess.run(["terraform", "plan"], check=True, cwd=directory)
+    except subprocess.CalledProcessError as e:
+        print(f"Error running Terraform: {e}")
+
+if __name__ == "__main__":
+    if len(sys.argv) < 4:
+        print("Usage: python render_and_plan.py <template-dir> <output-dir> <context-yaml>")
+        sys.exit(1)
+    
+    template_dir = sys.argv[1]
+    output_dir = sys.argv[2]
+    context_yaml = sys.argv[3]
+
+    if not os.path.exists(template_dir):
+        print(f"Template directory {template_dir} does not exist.")
+        sys.exit(1)
+
+    if not os.path.exists(context_yaml):
+        print(f"Context YAML file {context_yaml} does not exist.")
+        sys.exit(1)
+
+    context = load_yaml_context(context_yaml)
+    render_templates(template_dir, output_dir, context)
+    run_terraform_plan(output_dir)
+```
+
+### How to Use the Script
+
+1. **Save the Script**: Save the script as `render_and_plan.py`.
+
+2. **Prepare Your Directory Structure**:
+
+   - `templates/`: Directory containing your `.j2` Jinja2 templates.
+   - `context.yaml`: YAML file containing the context for rendering templates.
+
+   Example `templates/example.tf.j2`:
+
+   ```j2
+   resource "aws_instance" "{{ instance_name }}" {
+     ami           = "{{ ami }}"
+     instance_type = "{{ instance_type }}"
+   }
+   ```
+
+   Example `context.yaml`:
+
+   ```yaml
+   instance_name: my_instance
+   ami: ami-0abcdef1234567890
+   instance_type: t2.micro
+   ```
+
+3. **Run the Script**:
+
+   ```sh
+   python render_and_plan.py templates output context.yaml
+   ```
+
+This script will:
+
+1. Render all `.j2` files in the `templates/` directory using the context provided in `context.yaml`.
+2. Save the rendered Terraform files to the `output/` directory.
+3. Run `terraform init` and `terraform plan` in the `output/` directory to check the state against the generated configurations.
+
+### Notes
+
+- Ensure you have Terraform installed and properly configured in your environment.
+- This script assumes a simple flat structure for the templates and context. For more complex scenarios, you might need to adjust the rendering logic.
+- This script prints errors from Terraform commands, helping you debug issues with the generated configurations.

@@ -371,3 +371,95 @@ chmod +x render_all_jinja2.sh
 ```
 
 This modification ensures that the `to_json` filter is available in the Jinja2 environment, allowing you to use it in your templates.
+
+
+To include `tfvars` (Terraform variables) in the Jinja2 render script, you'll need to parse the `tfvars` file and pass the variables to the template rendering function. Here's how you can modify the Python script to include this functionality.
+
+### Updated Python Script: `render_jinja2.py`
+
+```python
+import sys
+import os
+import json
+from jinja2 import Environment, FileSystemLoader
+
+def to_json(value):
+    return json.dumps(value)
+
+def parse_tfvars(tfvars_file):
+    variables = {}
+    with open(tfvars_file) as f:
+        for line in f:
+            if '=' in line:
+                key, value = line.split('=', 1)
+                key = key.strip()
+                value = value.strip().strip('"')
+                variables[key] = value
+    return variables
+
+def render_template(template_dir, template_file, tfvars_file):
+    env = Environment(loader=FileSystemLoader(template_dir))
+    env.filters['to_json'] = to_json  # Add the custom to_json filter
+
+    variables = parse_tfvars(tfvars_file)
+    template = env.get_template(template_file)
+    rendered_content = template.render(variables)
+    return rendered_content
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python render_jinja2.py <template_directory> <template_file> <tfvars_file>")
+        sys.exit(1)
+
+    template_directory = sys.argv[1]
+    template_file = sys.argv[2]
+    tfvars_file = sys.argv[3]
+
+    rendered = render_template(template_directory, template_file, tfvars_file)
+    output_file_path = os.path.join(template_directory, template_file[:-3])
+    
+    with open(output_file_path, 'w') as output_file:
+        output_file.write(rendered)
+
+    print(f'Rendered {template_file} to {output_file_path}')
+```
+
+### Updated Bash Script: `render_all_jinja2.sh`
+
+Update the Bash script to include the `tfvars` file as an argument:
+
+```bash
+#!/bin/bash
+
+# Directory containing the .j2 files
+TEMPLATE_DIR="path/to/your/templates"
+# Path to the tfvars file
+TFVARS_FILE="path/to/your/variables.tfvars"
+
+# Iterate through all .j2 files in the directory
+for template_file in "$TEMPLATE_DIR"/*.j2; do
+    # Extract the base name of the file
+    base_name=$(basename "$template_file")
+    
+    # Render the template using the Python script
+    python render_jinja2.py "$TEMPLATE_DIR" "$base_name" "$TFVARS_FILE"
+done
+```
+
+### Steps to Execute
+
+1. Save the updated Python script (`render_jinja2.py`) in your working directory.
+2. Save the updated Bash script (`render_all_jinja2.sh`) in your working directory.
+3. Make the Bash script executable if not already done:
+
+```sh
+chmod +x render_all_jinja2.sh
+```
+
+4. Run the Bash script:
+
+```sh
+./render_all_jinja2.sh
+```
+
+In this update, the Python script parses the `tfvars` file to extract the variables and pass them to the Jinja2 template during rendering. The Bash script calls the Python script with the appropriate arguments, including the path to the `tfvars` file.

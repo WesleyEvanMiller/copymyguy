@@ -461,3 +461,154 @@ chmod +x render_all_templates.sh
     - Calls the `render_jinja2.py` script to render each template using the generated JSON file with variables.
 
 This setup ensures that the variables from the specified YAML files, including derived variables, are used to render both the `.tf` and `.tfvars` Jinja2 templates, and writes the rendered content to the appropriate files.
+
+------------------------------
+
+The errors suggest two main issues:
+
+1. **Undefined Variable Error in Jinja2 Template**: The `IacSec` variable is not defined in the context when rendering the template.
+2. **Empty JSON File**: The JSON file is empty or improperly written, leading to a `JSONDecodeError`.
+
+Let's address these issues one by one.
+
+### Issue 1: Undefined Variable Error in Jinja2 Template
+
+This error occurs because a variable used in the template is not defined. To debug this, let's ensure that all necessary variables are properly defined and available.
+
+### Updated Python Script: `generate_variables.py`
+
+Let's add more robust handling of undefined variables and print out the variables during the resolution process for debugging.
+
+```python
+import sys
+import os
+import yaml
+import json
+from jinja2 import Template
+
+def parse_yaml_files(yaml_files):
+    variables = {}
+    for filepath in yaml_files:
+        if filepath.endswith('.yaml') or filepath.endswith('.yml'):
+            with open(filepath, 'r') as file:
+                yaml_content = yaml.safe_load(file)
+                if isinstance(yaml_content, dict):
+                    for key, value in yaml_content.items():
+                        if key in variables:
+                            print(f"Warning: Duplicate key {key} found in {filepath}. Using the latest value.")
+                        variables[key] = value
+    return variables
+
+def resolve_derived_variables(variables):
+    resolved_variables = {}
+    for key, value in variables.items():
+        if isinstance(value, str):
+            try:
+                template = Template(value)
+                resolved_value = template.render(variables)
+                resolved_variables[key] = resolved_value
+            except Exception as e:
+                print(f"Error resolving variable {key}: {e}")
+                resolved_variables[key] = value  # Keep the unresolved value for now
+        else:
+            resolved_variables[key] = value
+    return resolved_variables
+
+def generate_variables(variables, output_file):
+    with open(output_file, 'w') as f:
+        json.dump(variables, f, indent=4)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python generate_variables.py <output_json_file> <yaml_file_1> <yaml_file_2> ...")
+        sys.exit(1)
+
+    output_json_file = sys.argv[1]
+    yaml_files = sys.argv[2:]
+
+    variables = parse_yaml_files(yaml_files)
+    resolved_variables = resolve_derived_variables(variables)
+    generate_variables(resolved_variables, output_json_file)
+    print(f"Generated {output_json_file} with variables from {yaml_files}")
+```
+
+### Issue 2: Empty JSON File
+
+The `JSONDecodeError` suggests that the JSON file generated is empty or malformed. Ensure that the `generate_variables.py` script correctly writes the JSON file.
+
+### Updated Python Script: `render_jinja2.py`
+
+Ensure that the script can handle empty or malformed JSON files gracefully and add debug prints to understand what's being read.
+
+```python
+import sys
+import os
+import json
+from jinja2 import Environment, FileSystemLoader
+
+def to_json(value):
+    return json.dumps(value)
+
+def render_template(template_dir, template_file, variables):
+    env = Environment(loader=FileSystemLoader(template_dir))
+    env.filters['to_json'] = to_json  # Add the custom to_json filter
+    template = env.get_template(template_file)
+    rendered_content = template.render(variables)
+    return rendered_content
+
+def load_variables(json_file):
+    with open(json_file, 'r') as f:
+        try:
+            variables = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Error loading JSON file {json_file}: {e}")
+            variables = {}
+    return variables
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python render_jinja2.py <template_directory> <template_file> <variables_json_file>")
+        sys.exit(1)
+
+    template_directory = sys.argv[1]
+    template_file = sys.argv[2]
+    json_file = sys.argv[3]
+
+    variables = load_variables(json_file)
+    rendered = render_template(template_directory, template_file, variables)
+    output_file_name = template_file[:-3]  # Remove the .j2 extension
+    output_file_path = os.path.join(template_directory, output_file_name)
+    
+    with open(output_file_path, 'w') as output_file:
+        output_file.write(rendered)
+
+    print(f'Rendered {template_file} to {output_file_path}')
+```
+
+### Debugging Steps
+
+1. **Generate Variables**:
+    - Run the `generate_variables.py` script and ensure it prints out the variables correctly.
+    - Check the generated JSON file to ensure it contains the expected variables.
+
+2. **Render Templates**:
+    - Run the `render_jinja2.py` script and ensure it prints out the variables it is using for rendering.
+    - Check the output files to ensure they are correctly rendered.
+
+### Execution
+
+1. Save the updated Python scripts (`generate_variables.py` and `render_jinja2.py`) in your working directory.
+2. Modify the paths in the Bash script to match your actual template directory and YAML files.
+3. Make the Bash script executable if not already done:
+
+```sh
+chmod +x render_all_templates.sh
+```
+
+4. Run the Bash script:
+
+```sh
+./render_all_templates.sh
+```
+
+These updates should help you identify and resolve issues with undefined variables and ensure the JSON file is correctly generated and used for rendering the Jinja2 templates.

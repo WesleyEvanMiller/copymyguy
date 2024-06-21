@@ -295,98 +295,29 @@ Feel free to modify the script according to your specific needs, such as passing
 
 ------------------------------------------
 
-The error `no filter named 'to_json'` indicates that Jinja2 is trying to use a filter called `to_json`, but it is not available by default. You need to add custom filters to your Jinja2 environment to support this functionality.
-
-To resolve this, you can define a custom `to_json` filter in your Python script. Here's how you can modify the `render_jinja2.py` script to include a custom `to_json` filter:
+You're right. Since `generate_tfvars.py` generates the `tfvars` file and `render_jinja2.py` doesn't need to parse the `tfvars` file separately, we can simplify `render_jinja2.py` by directly loading the `tfvars` values passed from the `generate_tfvars.py`. Here’s the corrected version of the scripts.
 
 ### Updated Python Script: `render_jinja2.py`
 
+This script will now directly render Jinja2 templates using the `tfvars` values passed as arguments.
+
 ```python
 import sys
-from jinja2 import Environment, FileSystemLoader
 import os
 import json
+from jinja2 import Environment, FileSystemLoader
 
 def to_json(value):
     return json.dumps(value)
 
-def render_template(template_dir, template_file):
+def render_template(template_dir, template_file, variables):
     env = Environment(loader=FileSystemLoader(template_dir))
     env.filters['to_json'] = to_json  # Add the custom to_json filter
     template = env.get_template(template_file)
-    rendered_content = template.render()
+    rendered_content = template.render(variables)
     return rendered_content
 
-if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python render_jinja2.py <template_directory> <template_file>")
-        sys.exit(1)
-
-    template_directory = sys.argv[1]
-    template_file = sys.argv[2]
-
-    rendered = render_template(template_directory, template_file)
-    output_file_path = os.path.join(template_directory, template_file[:-3])
-    
-    with open(output_file_path, 'w') as output_file:
-        output_file.write(rendered)
-
-    print(f'Rendered {template_file} to {output_file_path}')
-```
-
-### Bash Script: `render_all_jinja2.sh`
-
-The Bash script remains the same:
-
-```bash
-#!/bin/bash
-
-# Directory containing the .j2 files
-TEMPLATE_DIR="path/to/your/templates"
-
-# Iterate through all .j2 files in the directory
-for template_file in "$TEMPLATE_DIR"/*.j2; do
-    # Extract the base name of the file
-    base_name=$(basename "$template_file")
-    
-    # Render the template using the Python script
-    python render_jinja2.py "$TEMPLATE_DIR" "$base_name"
-done
-```
-
-### Steps to Execute
-
-1. Save the updated Python script (`render_jinja2.py`) in your working directory.
-2. Save the Bash script (`render_all_jinja2.sh`) in your working directory.
-3. Make the Bash script executable if not already done:
-
-```sh
-chmod +x render_all_jinja2.sh
-```
-
-4. Run the Bash script:
-
-```sh
-./render_all_jinja2.sh
-```
-
-This modification ensures that the `to_json` filter is available in the Jinja2 environment, allowing you to use it in your templates.
-
-
-To include `tfvars` (Terraform variables) in the Jinja2 render script, you'll need to parse the `tfvars` file and pass the variables to the template rendering function. Here's how you can modify the Python script to include this functionality.
-
-### Updated Python Script: `render_jinja2.py`
-
-```python
-import sys
-import os
-import json
-from jinja2 import Environment, FileSystemLoader
-
-def to_json(value):
-    return json.dumps(value)
-
-def parse_tfvars(tfvars_file):
+def load_tfvars(tfvars_file):
     variables = {}
     with open(tfvars_file) as f:
         for line in f:
@@ -397,15 +328,6 @@ def parse_tfvars(tfvars_file):
                 variables[key] = value
     return variables
 
-def render_template(template_dir, template_file, tfvars_file):
-    env = Environment(loader=FileSystemLoader(template_dir))
-    env.filters['to_json'] = to_json  # Add the custom to_json filter
-
-    variables = parse_tfvars(tfvars_file)
-    template = env.get_template(template_file)
-    rendered_content = template.render(variables)
-    return rendered_content
-
 if __name__ == "__main__":
     if len(sys.argv) != 4:
         print("Usage: python render_jinja2.py <template_directory> <template_file> <tfvars_file>")
@@ -415,7 +337,8 @@ if __name__ == "__main__":
     template_file = sys.argv[2]
     tfvars_file = sys.argv[3]
 
-    rendered = render_template(template_directory, template_file, tfvars_file)
+    variables = load_tfvars(tfvars_file)
+    rendered = render_template(template_directory, template_file, variables)
     output_file_path = os.path.join(template_directory, template_file[:-3])
     
     with open(output_file_path, 'w') as output_file:
@@ -424,42 +347,66 @@ if __name__ == "__main__":
     print(f'Rendered {template_file} to {output_file_path}')
 ```
 
-### Updated Bash Script: `render_all_jinja2.sh`
+### Updated Bash Script: `render_all_templates.sh`
 
-Update the Bash script to include the `tfvars` file as an argument:
+This script orchestrates the process, generating the `tfvars` file and rendering the Jinja2 templates.
 
 ```bash
 #!/bin/bash
 
-# Directory containing the .j2 files
+# Directory containing the Jinja2 templates
 TEMPLATE_DIR="path/to/your/templates"
-# Path to the tfvars file
+# Path to the tfvars file to be generated
 TFVARS_FILE="path/to/your/variables.tfvars"
+# Directories containing YAML files
+YAML_DIRS=("path/to/your/yaml/dir1" "path/to/your/yaml/dir2")
 
-# Iterate through all .j2 files in the directory
-for template_file in "$TEMPLATE_DIR"/*.j2; do
-    # Extract the base name of the file
-    base_name=$(basename "$template_file")
-    
-    # Render the template using the Python script
-    python render_jinja2.py "$TEMPLATE_DIR" "$base_name" "$TFVARS_FILE"
+# Generate the tfvars file from the YAML files
+python generate_tfvars.py "$TFVARS_FILE" "${YAML_DIRS[@]}"
+
+# Iterate through all .j2 and .tf.j2 files in the directory
+for template_file in "$TEMPLATE_DIR"/*.{j2,tf.j2}; do
+    # Check if the file exists (in case no files match the pattern)
+    if [[ -e "$template_file" ]]; then
+        # Extract the base name of the file
+        base_name=$(basename "$template_file")
+        
+        # Render the template using the Python script
+        python render_jinja2.py "$TEMPLATE_DIR" "$base_name" "$TFVARS_FILE"
+    fi
 done
 ```
 
 ### Steps to Execute
 
-1. Save the updated Python script (`render_jinja2.py`) in your working directory.
-2. Save the updated Bash script (`render_all_jinja2.sh`) in your working directory.
+1. Save the updated Python scripts (`generate_tfvars.py` and `render_jinja2.py`) in your working directory.
+2. Save the updated Bash script (`render_all_templates.sh`) in your working directory.
 3. Make the Bash script executable if not already done:
 
 ```sh
-chmod +x render_all_jinja2.sh
+chmod +x render_all_templates.sh
 ```
 
 4. Run the Bash script:
 
 ```sh
-./render_all_jinja2.sh
+./render_all_templates.sh
 ```
 
-In this update, the Python script parses the `tfvars` file to extract the variables and pass them to the Jinja2 template during rendering. The Bash script calls the Python script with the appropriate arguments, including the path to the `tfvars` file.
+### Explanation
+
+1. **Python Script (`generate_tfvars.py`)**:
+    - Reads all YAML files from the specified directories.
+    - Extracts key-value pairs from the YAML files.
+    - Writes the key-value pairs to a `tfvars` file.
+    
+2. **Python Script (`render_jinja2.py`)**:
+    - Loads the variables from the generated `tfvars` file.
+    - Renders the Jinja2 template using the variables from the `tfvars` file.
+    
+3. **Bash Script (`render_all_templates.sh`)**:
+    - First calls the `generate_tfvars.py` script to generate the `tfvars` file using YAML files from specified directories.
+    - Then iterates through all `.j2` and `.tf.j2` files in the template directory.
+    - Calls the `render_jinja2.py` script to render each template using the generated `tfvars` file.
+
+This setup ensures that the `tfvars` file is dynamically generated based on the YAML files before rendering the Jinja2 templates, including any additional Terraform files that require Jinja2 processing.

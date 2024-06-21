@@ -410,3 +410,156 @@ chmod +x render_all_templates.sh
     - Calls the `render_jinja2.py` script to render each template using the generated `tfvars` file.
 
 This setup ensures that the `tfvars` file is dynamically generated based on the YAML files before rendering the Jinja2 templates, including any additional Terraform files that require Jinja2 processing.
+---------------------------------
+
+To ensure that the `tfvars` files are rendered using the variables from the YAML files, we'll follow the same process as rendering `.tf` files. We'll use the `generate_variables.py` script to extract variables from the YAML files and then use those variables to render both `.tf` and `.tfvars` templates.
+
+### Python Script: `generate_variables.py`
+
+This script reads the YAML files, extracts key-value pairs, and generates a JSON file with the variables.
+
+```python
+import sys
+import os
+import yaml
+import json
+
+def parse_yaml_files(yaml_dirs):
+    variables = {}
+    for directory in yaml_dirs:
+        for filename in os.listdir(directory):
+            if filename.endswith('.yaml') or filename.endswith('.yml'):
+                filepath = os.path.join(directory, filename)
+                with open(filepath, 'r') as file:
+                    yaml_content = yaml.safe_load(file)
+                    if isinstance(yaml_content, dict):
+                        for key, value in yaml_content.items():
+                            if key in variables:
+                                print(f"Warning: Duplicate key {key} found in {filepath}. Using the latest value.")
+                            variables[key] = value
+    return variables
+
+def generate_variables(variables, output_file):
+    with open(output_file, 'w') as f:
+        json.dump(variables, f, indent=4)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python generate_variables.py <output_json_file> <yaml_directory_1> <yaml_directory_2> ...")
+        sys.exit(1)
+
+    output_json_file = sys.argv[1]
+    yaml_directories = sys.argv[2:]
+
+    variables = parse_yaml_files(yaml_directories)
+    generate_variables(variables, output_json_file)
+    print(f"Generated {output_json_file} with variables from {yaml_directories}")
+```
+
+### Python Script: `render_jinja2.py`
+
+This script renders Jinja2 templates using the variables from the JSON file.
+
+```python
+import sys
+import os
+import json
+from jinja2 import Environment, FileSystemLoader
+
+def to_json(value):
+    return json.dumps(value)
+
+def render_template(template_dir, template_file, variables):
+    env = Environment(loader=FileSystemLoader(template_dir))
+    env.filters['to_json'] = to_json  # Add the custom to_json filter
+    template = env.get_template(template_file)
+    rendered_content = template.render(variables)
+    return rendered_content
+
+def load_variables(json_file):
+    with open(json_file, 'r') as f:
+        variables = json.load(f)
+    return variables
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python render_jinja2.py <template_directory> <template_file> <variables_json_file>")
+        sys.exit(1)
+
+    template_directory = sys.argv[1]
+    template_file = sys.argv[2]
+    json_file = sys.argv[3]
+
+    variables = load_variables(json_file)
+    rendered = render_template(template_directory, template_file, variables)
+    output_file_path = os.path.join(template_directory, template_file[:-3])
+    
+    with open(output_file_path, 'w') as output_file:
+        output_file.write(rendered)
+
+    print(f'Rendered {template_file} to {output_file_path}')
+```
+
+### Bash Script: `render_all_templates.sh`
+
+This script orchestrates the process, generating the variables file and rendering the Jinja2 templates for `.tf` and `.tfvars` files.
+
+```bash
+#!/bin/bash
+
+# Directory containing the Jinja2 templates
+TEMPLATE_DIR="path/to/your/templates"
+# Path to the variables JSON file to be generated
+VARIABLES_FILE="path/to/your/variables.json"
+# Directories containing YAML files
+YAML_DIRS=("path/to/your/yaml/dir1" "path/to/your/yaml/dir2")
+
+# Generate the variables file from the YAML files
+python generate_variables.py "$VARIABLES_FILE" "${YAML_DIRS[@]}"
+
+# Iterate through all .tf.j2 and .tfvars.j2 files in the directory
+for template_file in "$TEMPLATE_DIR"/*.{tf.j2,tfvars.j2}; do
+    # Check if the file exists (in case no files match the pattern)
+    if [[ -e "$template_file" ]]; then
+        # Extract the base name of the file
+        base_name=$(basename "$template_file")
+        
+        # Render the template using the Python script
+        python render_jinja2.py "$TEMPLATE_DIR" "$base_name" "$VARIABLES_FILE"
+    fi
+done
+```
+
+### Steps to Execute
+
+1. Save the updated Python scripts (`generate_variables.py` and `render_jinja2.py`) in your working directory.
+2. Save the updated Bash script (`render_all_templates.sh`) in your working directory.
+3. Make the Bash script executable if not already done:
+
+```sh
+chmod +x render_all_templates.sh
+```
+
+4. Run the Bash script:
+
+```sh
+./render_all_templates.sh
+```
+
+### Explanation
+
+1. **Python Script (`generate_variables.py`)**:
+    - Reads all YAML files from the specified directories.
+    - Extracts key-value pairs from the YAML files.
+    - Writes the key-value pairs to a JSON file.
+    
+2. **Python Script (`render_jinja2.py`)**:
+    - Loads the variables from the generated JSON file.
+    - Renders the Jinja2 template using the variables from the JSON file.
+    
+3. **Bash Script (`render_all_templates.sh`)**:
+    - First calls the `generate_variables.py` script to generate the JSON file with variables using YAML files from specified directories.
+    - Then iterates through all `.tf.j2` and `.tfvars.j2` files in the template directory.
+    - Calls the `render_jinja2.py` script to render each template using the generated JSON file with variables.
+
+This setup ensures that the variables from the YAML files are used to render both the `.tf` and `.tfvars` Jinja2 templates.

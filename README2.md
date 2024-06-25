@@ -775,8 +775,7 @@ fi
 main
 
 ```
-```
-#!/bin/bash
+```#!/bin/bash
 
 # Function to execute Azure CLI command and handle errors
 execute_azure_cli_command() {
@@ -831,25 +830,6 @@ get_vm_resource_usage() {
 
 # Main function to get quota usage across regions
 main() {
-    # Subscription ID to use
-    subscription_id="your-subscription-id"  # Replace with your subscription ID
-
-    # Set the subscription context
-    echo "Setting subscription to $subscription_id"
-    az account set --subscription $subscription_id
-    if [ $? -ne 0 ]; then
-        echo "Failed to set subscription to $subscription_id"
-        exit 1
-    fi
-
-    # Verify the current subscription
-    current_subscription=$(az account show --query 'id' --output tsv)
-    echo "Current subscription: $current_subscription"
-    if [ "$current_subscription" != "$subscription_id" ]; then
-        echo "Failed to set the correct subscription."
-        exit 1
-    fi
-
     # List of regions to check
     regions=("eastus" "westus" "centralus")  # Modify this list based on your needs
 
@@ -870,3 +850,4 @@ fi
 main
 
 ```
+az vm show --name <vm-name> --resource-group <resource-group> --query '{vmSize:hardwareProfile.vmSize, statuses:instanceView.statuses}' --expand instanceView --output json

@@ -775,11 +775,12 @@ fi
 main
 
 ```
-```#!/bin/bash
+```
+#!/bin/bash
 
 # Function to execute Azure CLI command and handle errors
 execute_azure_cli_command() {
-    local command=$1
+    local command="$1"
     local result
     result=$(eval "$command" 2>/dev/null)
     if [ $? -ne 0 ]; then
@@ -792,7 +793,7 @@ execute_azure_cli_command() {
 
 # Function to get the list of VMs and their resource usage
 get_vm_resource_usage() {
-    local region=$1
+    local region="$1"
     echo "Fetching VM resource usage for region: $region"
     
     # Get the list of VMs in the specified region
@@ -803,7 +804,7 @@ get_vm_resource_usage() {
     fi
     
     # Iterate over each VM and get its resource usage
-    echo "$vms" | jq -c '.[]' | while read vm; do
+    echo "$vms" | jq -c '.[]' | while read -r vm; do
         name=$(echo "$vm" | jq -r '.name')
         resource_group=$(echo "$vm" | jq -r '.resourceGroup')
         location=$(echo "$vm" | jq -r '.location')
@@ -811,7 +812,7 @@ get_vm_resource_usage() {
         echo "Fetching instance view for VM: $name in Resource Group: $resource_group"
         
         # Get VM instance view to find out the actual size and usage
-        instance_view=$(execute_azure_cli_command "az vm show --name $name --resource-group $resource_group --query '{vmSize:hardwareProfile.vmSize, statuses:instanceView.statuses}' --expand instanceView --output json")
+        instance_view=$(execute_azure_cli_command "az vm show --name \"$name\" --resource-group \"$resource_group\" --query '{vmSize:hardwareProfile.vmSize, statuses:instanceView.statuses}' --expand instanceView --output json")
         if [ $? -ne 0 ]; then
             echo "Failed to fetch instance view for VM $name"
             continue
@@ -834,7 +835,7 @@ main() {
     regions=("eastus" "westus" "centralus")  # Modify this list based on your needs
 
     for region in "${regions[@]}"; do
-        get_vm_resource_usage $region
+        get_vm_resource_usage "$region"
         echo ""
     done
 }
@@ -848,6 +849,7 @@ fi
 
 # Run the main function
 main
+
 
 ```
 az vm show --name <vm-name> --resource-group <resource-group> --query '{vmSize:hardwareProfile.vmSize, statuses:instanceView.statuses}' --expand instanceView --output json

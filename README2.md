@@ -614,219 +614,60 @@ chmod +x render_all_templates.sh
 These updates should help you identify and resolve issues with undefined variables and ensure the JSON file is correctly generated and used for rendering the Jinja2 templates.
 
 
- check_compute_usage.sh
 ```
-#!/bin/bash
+import sys
+import os
+import json
+from jinja2 import Environment, FileSystemLoader, UndefinedError
 
-# Function to execute Azure CLI command and handle errors
-execute_azure_cli_command() {
-    local command=$1
-    local result
-    result=$(eval "$command" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "Error executing command: $command"
-        return 1
-    fi
-    echo "$result"
-    return 0
-}
+def to_json(value):
+    return json.dumps(value)
 
-# Function to get the list of VMs and their resource usage
-get_vm_resource_usage() {
-    local region=$1
-    echo "Fetching VM resource usage for region: $region"
+def render_template(template_dir, template_file, variables):
+    env = Environment(loader=FileSystemLoader(template_dir))
+    env.filters['to_json'] = to_json  # Add the custom to_json filter
+    template = env.get_template(template_file)
+    try:
+        rendered_content = template.render(variables)
+    except UndefinedError as e:
+        print(f"Warning: Undefined variable {e} in template {template_file}.")
+        rendered_content = template.render(variables, undefined_variables_ignored=True)
+    return rendered_content
+
+def load_variables(json_file):
+    with open(json_file, 'r') as f:
+        try:
+            variables = json.load(f)
+        except json.JSONDecodeError as e:
+            print(f"Error loading JSON file {json_file}: {e}")
+            variables = {}
+    return variables
+
+if __name__ == "__main__":
+    if len(sys.argv) != 4:
+        print("Usage: python render_jinja2.py <template_directory> <template_file> <variables_json_file>")
+        sys.exit(1)
+
+    template_directory = sys.argv[1]
+    template_file = sys.argv[2]
+    json_file = sys.argv[3]
+
+    variables = load_variables(json_file)
+    rendered = render_template(template_directory, template_file, variables)
     
-    # Get the list of VMs in the specified region
-    vms=$(execute_azure_cli_command "az vm list --query '[].{name:name, resourceGroup:resourceGroup, location:location}' --output json")
-    if [ $? -ne 0 ]; then
-        echo "Failed to fetch VM list for region $region"
-        return 1
-    fi
+    # Correctly name the output file
+    if template_file.endswith('.tfvars.j2'):
+        output_file_name = template_file.replace('.tfvars.j2', '.tfvars')
+    else:
+        output_file_name = template_file[:-3]  # Remove the .j2 extension
     
-    # Iterate over each VM and get its resource usage
-    echo "$vms" | jq -c '.[]' | while read vm; do
-        name=$(echo "$vm" | jq -r '.name')
-        resource_group=$(echo "$vm" | jq -r '.resourceGroup')
-        location=$(echo "$vm" | jq -r '.location')
-        
-        # Get VM instance view to find out the actual size and usage
-        instance_view=$(execute_azure_cli_command "az vm get-instance-view --name $name --resource-group $resource_group --query 'instanceView' --output json")
-        if [ $? -ne 0 ]; then
-            echo "Failed to fetch instance view for VM $name"
-            continue
-        fi
-        
-        vm_size=$(echo "$instance_view" | jq -r '.vmSize')
-        statuses=$(echo "$instance_view" | jq -r '.statuses[].displayStatus' | paste -sd "," -)
-        
-        echo "VM: $name, Resource Group: $resource_group, Location: $location, Size: $vm_size, Statuses: $statuses"
-    done
-}
-
-# Main function to get quota usage across regions
-main() {
-    # List of regions to check
-    regions=("eastus" "westus" "centralus")  # Modify this list based on your needs
-
-    for region in "${regions[@]}"; do
-        get_vm_resource_usage $region
-        echo ""
-    done
-}
-
-# Ensure Azure CLI is logged in
-az account show &> /dev/null
-if [ $? -ne 0 ]; then
-    echo "Please log in to Azure CLI first using 'az login'."
-    exit 1
-fi
-
-# Run the main function
-main
-
-```
-
-```
-#!/bin/bash
-
-# Function to execute Azure CLI command and handle errors
-execute_azure_cli_command() {
-    local command=$1
-    local result
-    result=$(eval "$command" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "Error executing command: $command"
-        return 1
-    fi
-    echo "$result"
-    return 0
-}
-
-# Function to get the list of VMs and their resource usage
-get_vm_resource_usage() {
-    local region=$1
-    echo "Fetching VM resource usage for region: $region"
+    output_file_path = os.path.join(template_directory, output_file_name)
     
-    # Get the list of VMs in the specified region
-    vms=$(execute_azure_cli_command "az vm list --query '[].{name:name, resourceGroup:resourceGroup, location:location}' --output json")
-    if [ $? -ne 0 ]; then
-        echo "Failed to fetch VM list for region $region"
-        return 1
-    fi
-    
-    # Iterate over each VM and get its resource usage
-    echo "$vms" | jq -c '.[]' | while read vm; do
-        name=$(echo "$vm" | jq -r '.name')
-        resource_group=$(echo "$vm" | jq -r '.resourceGroup')
-        location=$(echo "$vm" | jq -r '.location')
-        
-        # Get VM instance view to find out the actual size and usage
-        instance_view=$(execute_azure_cli_command "az vm get-instance-view --name $name --resource-group $resource_group --query 'instanceView' --output json")
-        if [ $? -ne 0 ]; then
-            echo "Failed to fetch instance view for VM $name"
-            continue
-        fi
-        
-        vm_size=$(echo "$instance_view" | jq -r '.vmSize')
-        statuses=$(echo "$instance_view" | jq -r '.statuses[].displayStatus' | paste -sd "," -)
-        
-        echo "VM: $name, Resource Group: $resource_group, Location: $location, Size: $vm_size, Statuses: $statuses"
-    done
-}
+    with open(output_file_path, 'w') as output_file:
+        output_file.write(rendered)
 
-# Main function to get quota usage across regions
-main() {
-    # Subscription ID to use
-    subscription_id="your-subscription-id"  # Replace with your subscription ID
+    print(f'Rendered {template_file} to {output_file_path}')
 
-    # Set the subscription context
-    echo "Setting subscription to $subscription_id"
-    az account set --subscription $subscription_id
-    if [ $? -ne 0 ]; then
-        echo "Failed to set subscription to $subscription_id"
-        exit 1
-    fi
-
-    # Verify the current subscription
-    current_subscription=$(az account show --query 'id' --output tsv)
-    echo "Current subscription: $current_subscription"
-    if [ "$current_subscription" != "$subscription_id" ]; then
-        echo "Failed to set the correct subscription."
-        exit 1
-    fi
-
-    # List of regions to check
-    regions=("eastus" "westus" "centralus")  # Modify this list based on your needs
-
-    for region in "${regions[@]}"; do
-        get_vm_resource_usage $region
-        echo ""
-    done
-}
-
-# Ensure Azure CLI is logged in
-az account show &> /dev/null
-if [ $? -ne 0 ]; then
-    echo "Please log in to Azure CLI first using 'az login'."
-    exit 1
-fi
-
-# Run the main function
-main
-
-```
-```
-#!/bin/bash
-
-# Function to execute Azure CLI command and handle errors
-execute_azure_cli_command() {
-    local command="$1"
-    local result
-    result=$(eval "$command" 2>/dev/null)
-    if [ $? -ne 0 ]; then
-        echo "Error executing command: $command"
-        return 1
-    fi
-    echo "$result"
-    return 0
-}
-
-# Function to get the list of VMs and their resource usage
-get_vm_resource_usage() {
-    local region="$1"
-    echo "Fetching VM resource usage for region: $region"
-    
-    # Get the list of VMs in the specified region
-    vms=$(execute_azure_cli_command "az vm list --query '[].{name:name, resourceGroup:resourceGroup, location:location}' --output json")
-    if [ $? -ne 0 ]; then
-        echo "Failed to fetch VM list for region $region"
-        return 1
-    fi
-    
-    # Iterate over each VM and get its resource usage
-    echo "$vms" | jq -c '.[]' | while read -r vm; do
-        name=$(echo "$vm" | jq -r '.name')
-        resource_group=$(echo "$vm" | jq -r '.resourceGroup')
-        location=$(echo "$vm" | jq -r '.location')
-        
-        echo "Fetching instance view for VM: $name in Resource Group: $resource_group"
-        
-        # Get VM instance view to find out the actual size and usage
-        instance_view=$(execute_azure_cli_command "az vm show --name \"$name\" --resource-group \"$resource_group\" --query '{vmSize:hardwareProfile.vmSize, statuses:instanceView.statuses}' --expand instanceView --output json")
-        if [ $? -ne 0 ]; then
-            echo "Failed to fetch instance view for VM $name"
-            continue
-        fi
-        
-        vm_size=$(echo "$instance_view" | jq -r '.vmSize')
-        statuses=$(echo "$instance_view" | jq -r '.statuses[]?.displayStatus' | paste -sd "," -)
-        
-        if [ -z "$vm_size" ]; then
-            vm_size="N/A"
-        fi
-        
-        echo "VM: $name, Resource Group: $resource_group, Location: $location, Size: $vm_size, Statuses: $statuses"
-    done
 }
 
 # Main function to get quota usage across regions
@@ -852,4 +693,3 @@ main
 
 
 ```
-az vm show --name <vm-name> --resource-group <resource-group> --query '{vmSize:hardwareProfile.vmSize, statuses:instanceView.statuses}' --expand instanceView --output json

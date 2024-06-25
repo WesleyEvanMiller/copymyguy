@@ -668,28 +668,4 @@ if __name__ == "__main__":
 
     print(f'Rendered {template_file} to {output_file_path}')
 
-}
-
-# Main function to get quota usage across regions
-main() {
-    # List of regions to check
-    regions=("eastus" "westus" "centralus")  # Modify this list based on your needs
-
-    for region in "${regions[@]}"; do
-        get_vm_resource_usage "$region"
-        echo ""
-    done
-}
-
-# Ensure Azure CLI is logged in
-az account show &> /dev/null
-if [ $? -ne 0 ]; then
-    echo "Please log in to Azure CLI first using 'az login'."
-    exit 1
-fi
-
-# Run the main function
-main
-
-
 ```

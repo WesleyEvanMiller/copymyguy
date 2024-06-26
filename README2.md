@@ -392,3 +392,79 @@ chmod +x render_all_templates.sh
     - Calls the `render_jinja2.py` script to render each template using the generated JSON file with variables.
 
 This setup ensures that the variables from the specified YAML files, including derived variables, are used to render both the `.tf` and `.tfvars` Jinja2 templates, and writes the rendered content to the appropriate files, specifically ensuring `vars.tfvars.j2` is rendered to `vars.tfvars`.
+---------
+To perform a manual update of the `capacity_reservation_group_id` for an AKS cluster without replacing the cluster, you can follow these steps:
+
+1. **Manually Update the AKS Cluster**:
+   - Use the Azure portal, Azure CLI, or Azure PowerShell to manually update the `capacity_reservation_group_id` for your AKS cluster.
+   
+2. **Import the Updated Resource into Terraform**:
+   - After making the manual update, you need to import the updated AKS cluster configuration back into your Terraform state.
+
+### Step-by-Step Guide
+
+#### Step 1: Manually Update the AKS Cluster
+
+**Using Azure CLI:**
+
+1. Update the `capacity_reservation_group_id` for your AKS cluster:
+   ```sh
+   az aks update \
+     --resource-group <your_resource_group> \
+     --name <your_aks_cluster_name> \
+     --capacity-reservation-group-id <new_capacity_reservation_group_id>
+   ```
+
+**Using Azure Portal:**
+
+1. Navigate to your AKS cluster in the Azure portal.
+2. Go to the "Configuration" or similar section where you can update the capacity reservation group.
+3. Update the `capacity_reservation_group_id` with the new value.
+
+#### Step 2: Import the Updated Resource into Terraform
+
+1. **Get the Resource ID**:
+   - You need the full resource ID of your AKS cluster to import it into Terraform. You can find this in the Azure portal or by using the Azure CLI:
+     ```sh
+     az aks show --resource-group <your_resource_group> --name <your_aks_cluster_name> --query id
+     ```
+
+2. **Import the AKS Cluster Resource**:
+   - Use the `terraform import` command to import the AKS cluster into your Terraform state:
+     ```sh
+     terraform import azurerm_kubernetes_cluster.example <aks_cluster_resource_id>
+     ```
+
+3. **Update the Terraform Configuration**:
+   - Ensure your Terraform configuration file (`main.tf` or similar) includes the `capacity_reservation_group_id` attribute with the new value:
+     ```hcl
+     resource "azurerm_kubernetes_cluster" "example" {
+       name                = "example-aks"
+       location            = azurerm_resource_group.example.location
+       resource_group_name = azurerm_resource_group.example.name
+       dns_prefix          = "exampleaks"
+       
+       default_node_pool {
+         name       = "default"
+         node_count = 1
+         vm_size    = "Standard_DS2_v2"
+       }
+       
+       identity {
+         type = "SystemAssigned"
+       }
+       
+       capacity_reservation_group_id = "<new_capacity_reservation_group_id>"
+     }
+     ```
+
+4. **Run Terraform Plan and Apply**:
+   - Run `terraform plan` to ensure that Terraform recognizes the manually updated state and does not attempt to replace the resource.
+   - If the plan looks good, run `terraform apply` to apply any additional changes or just confirm the import.
+
+```sh
+terraform plan
+terraform apply
+```
+
+By following these steps, you can manually update the `capacity_reservation_group_id` for your AKS cluster and import the updated configuration into Terraform without triggering a resource replacement. This approach ensures that the cluster remains intact and operational throughout the process.

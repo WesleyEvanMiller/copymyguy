@@ -468,3 +468,74 @@ terraform apply
 ```
 
 By following these steps, you can manually update the `capacity_reservation_group_id` for your AKS cluster and import the updated configuration into Terraform without triggering a resource replacement. This approach ensures that the cluster remains intact and operational throughout the process.
+
+
+----
+Creating a Bash script to compare two YAML files and list the unique keys present in one but not the other involves using tools like `yq`, which is a command-line YAML processor. If `yq` is not already installed on your system, you can install it first (it's available for multiple platforms and often comes with package managers like `brew` or `apt`).
+
+Here's a Bash script that does what you're looking for:
+
+```bash
+#!/bin/bash
+
+# Check if two file paths are provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <path-to-yaml1> <path-to-yaml2>"
+    exit 1
+fi
+
+file1="$1"
+file2="$2"
+
+# Check if files exist
+if [ ! -f "$file1" ] || [ ! -f "$file2" ]; then
+    echo "Both files must exist."
+    exit 1
+fi
+
+# Function to list keys from a YAML file
+list_keys() {
+    yq eval 'path(..) | join(".")' "$1" | sed 's/\.\([0-9]\+\)/\[\1\]/g'
+}
+
+# Extract keys from both files
+keys1=$(list_keys "$file1")
+keys2=$(list_keys "$file2")
+
+# Find unique keys in each file
+unique_keys1=$(echo "$keys1" | grep -vxF -f <(echo "$keys2"))
+unique_keys2=$(echo "$keys2" | grep -vxF -f <(echo "$keys1"))
+
+# Output results
+echo "Unique keys in $file1:"
+echo "$unique_keys1"
+echo ""
+echo "Unique keys in $file2:"
+echo "$unique_keys2"
+```
+
+### How to Use This Script
+
+1. Save the script to a file, for example `compare_yaml.sh`.
+2. Make it executable with the command: `chmod +x compare_yaml.sh`.
+3. Run the script by passing the paths to the two YAML files as arguments:
+
+   ```bash
+   ./compare_yaml.sh path/to/yaml1.yml path/to/yaml2.yml
+   ```
+
+### Explanation of the Script
+
+- The script first checks if exactly two arguments are provided (the paths to the YAML files).
+- It then checks if both files actually exist.
+- The `list_keys` function uses `yq` to list all the keys in a YAML file. It converts array indices into a bracket notation to handle lists correctly.
+- It then uses `grep` to find keys that are unique to each file by comparing these lists.
+
+### Dependencies
+
+- **yq**: This script requires `yq` version 4.x. Different versions of `yq` might require slight adjustments in the command syntax. You can install `yq` typically via package managers:
+
+  - On Ubuntu: `sudo apt install yq`
+  - On macOS: `brew install yq`
+
+Make sure the version of `yq` installed supports the commands used in the script, as `yq` syntax can vary between major versions.

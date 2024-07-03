@@ -539,3 +539,19 @@ echo "$unique_keys2"
   - On macOS: `brew install yq`
 
 Make sure the version of `yq` installed supports the commands used in the script, as `yq` syntax can vary between major versions.
+
+```
+# Variables
+storage_account_name="<storage-account-name>"
+container_name="<container-name>"
+folder_path="your/folder/path/"  # Ensure this ends with a slash
+local_directory="/local/directory/"
+
+# Optional: Set these if your CLI is not configured with default credentials
+account_key="<storage-account-key>"
+
+# List and download blobs
+az storage blob list --account-name $storage_account_name --container-name $container_name --prefix $folder_path --account-key $account_key --output tsv --query "[].{name:name}" | while read -r blob_name; do
+    az storage blob download --account-name $storage_account_name --container-name $container_name --name "$blob_name" --file "${local_directory}${blob_name##*/}" --account-key $account_key
+done
+```

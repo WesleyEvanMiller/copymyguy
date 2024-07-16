@@ -555,3 +555,97 @@ az storage blob list --account-name $storage_account_name --container-name $cont
     az storage blob download --account-name $storage_account_name --container-name $container_name --name "$blob_name" --file "${local_directory}${blob_name##*/}" --account-key $account_key
 done
 ```
+------
+The error messages you are seeing indicate two separate issues:
+
+1. **Missing GLIBC Version**: The remote system has GLIBC 2.17, but your application requires at least GLIBC 2.28.
+2. **Wget Download Error**: The wget download fails with a `403 Forbidden` error, indicating that access to the specified URL is denied.
+
+### Addressing the GLIBC Issue
+
+Upgrading GLIBC can be complex because it's a core component of the system. Here are some potential approaches:
+
+#### Option 1: Upgrade GLIBC on the System (Not Recommended)
+Upgrading GLIBC on the system itself can be risky and may break existing applications. It is generally not recommended unless you are certain of the implications.
+
+#### Option 2: Use a Container with the Required GLIBC
+A safer approach is to use a container that has the required GLIBC version.
+
+For example, you can create a Dockerfile with a base image that has GLIBC 2.28 or higher:
+
+```dockerfile
+FROM debian:bullseye
+
+RUN apt-get update && apt-get install -y \
+    wget \
+    libc6
+
+# Install other dependencies and your application
+```
+
+#### Option 3: Use a Pre-built Binary with Bundled GLIBC
+Some applications provide pre-built binaries that bundle the required GLIBC version. Check if such an option is available for your application.
+
+### Addressing the Wget Download Error
+
+The `403 Forbidden` error when using `wget` indicates that the URL you are trying to access is forbidden. This could be due to several reasons:
+
+1. **Incorrect URL**: Verify that the URL is correct and accessible.
+
+2. **Authentication Required**: The URL might require authentication. Check if you need to provide credentials or tokens.
+
+3. **Network Restrictions**: There might be network restrictions or firewall rules preventing access.
+
+### Combining Solutions
+
+Here is a combined solution using Docker to address both issues:
+
+1. **Create a Dockerfile**:
+
+   ```dockerfile
+   FROM debian:bullseye
+
+   RUN apt-get update && apt-get install -y \
+       wget \
+       libc6
+
+   WORKDIR /app
+
+   # Download the required application
+   RUN wget https://update.code.visualstudio.com/commit:863d2581ecda6849923a2118d93a088b0745d9d6/server-linux-x64/stable -O vscode-server.tar.gz
+
+   # Extract the downloaded file
+   RUN tar -xzvf vscode-server.tar.gz -C /home/p229472/.vscode-server/bin/863d2581ecda6849923a2118d93a088b0745d9d6
+
+   CMD ["bash"]
+   ```
+
+2. **Build and Run the Docker Image**:
+
+   ```sh
+   docker build -t my-vscode-server .
+   docker run -it my-vscode-server
+   ```
+
+This Dockerfile sets up a container with the required GLIBC version and downloads the necessary files, bypassing the limitations of the host system. Adjust the URL and paths as needed for your specific application and environment.
+
+### Alternative: Manually Download and Install
+
+If using Docker is not feasible, you can manually download the required files on a machine with internet access and then transfer them to the target system.
+
+1. **Download on a Different Machine**:
+
+   ```sh
+   wget https://update.code.visualstudio.com/commit:863d2581ecda6849923a2118d93a088b0745d9d6/server-linux-x64/stable -O vscode-server.tar.gz
+   ```
+
+2. **Transfer the File**:
+   Use SCP, SFTP, or another method to transfer the downloaded file to the target system.
+
+3. **Extract and Install**:
+
+   ```sh
+   tar -xzvf vscode-server.tar.gz -C /home/p229472/.vscode-server/bin/863d2581ecda6849923a2118d93a088b0745d9d6
+   ```
+
+By following these steps, you should be able to address both the GLIBC version issue and the wget download error effectively.

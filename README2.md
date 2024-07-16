@@ -649,3 +649,178 @@ If using Docker is not feasible, you can manually download the required files on
    ```
 
 By following these steps, you should be able to address both the GLIBC version issue and the wget download error effectively.
+
+
+---
+
+If the provided methods do not work and you are still encountering SSL certificate verification issues with Azure CLI behind a proxy, you can try the following steps:
+
+Step-by-Step Approach to Handle SSL Issues with Azure CLI
+Ensure System CA Certificates Are Updated
+First, ensure that your system's CA certificates are updated and the proxy's certificate is correctly installed in your system's CA bundle.
+
+For Debian-based Systems (e.g., Ubuntu)
+sh
+Copy code
+sudo cp /path/to/proxy-cert.crt /usr/local/share/ca-certificates/
+sudo update-ca-certificates
+For Red Hat-based Systems (e.g., CentOS, Fedora)
+sh
+Copy code
+sudo cp /path/to/proxy-cert.crt /etc/pki/ca-trust/source/anchors/
+sudo update-ca-trust
+Configure Azure CLI to Use Custom CA Bundle
+Ensure that the Azure CLI is configured to use the correct CA bundle file that includes your proxy's certificate.
+
+Set the REQUESTS_CA_BUNDLE Environment Variable
+For Debian-based systems:
+
+sh
+Copy code
+export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+For Red Hat-based systems:
+
+sh
+Copy code
+export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt
+To make this change permanent, add the export command to your shell profile (~/.bashrc, ~/.zshrc, etc.):
+
+sh
+Copy code
+echo 'export REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt' >> ~/.bashrc
+source ~/.bashrc
+or for Red Hat-based systems:
+
+sh
+Copy code
+echo 'export REQUESTS_CA_BUNDLE=/etc/pki/tls/certs/ca-bundle.crt' >> ~/.bashrc
+source ~/.bashrc
+Bypass SSL Verification (Last Resort)
+If you are still facing issues, as a last resort, you can disable SSL verification. This is not recommended for production environments due to security risks.
+
+Using AZURE_CLI_DISABLE_CONNECTION_VERIFICATION
+Set the environment variable to disable SSL verification:
+
+sh
+Copy code
+export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=1
+Run the Azure CLI login command:
+
+sh
+Copy code
+az login --use-device-code
+Using PYTHONWARNINGS to Ignore SSL Warnings
+Set the PYTHONWARNINGS environment variable:
+
+sh
+Copy code
+export PYTHONWARNINGS="ignore:Unverified HTTPS request"
+Run the Azure CLI login command:
+
+sh
+Copy code
+az login --use-device-code
+Example for Temporary and Permanent Environment Variable Setting
+Temporary Setting:
+
+sh
+Copy code
+export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=1
+az login --use-device-code
+Permanent Setting:
+Add to your shell profile (~/.bashrc, ~/.zshrc, etc.):
+
+sh
+Copy code
+echo 'export AZURE_CLI_DISABLE_CONNECTION_VERIFICATION=1' >> ~/.bashrc
+source ~/.bashrc
+Verify the Solution
+After setting the appropriate environment variables, run the Azure CLI login command:
+
+sh
+Copy code
+az login --use-device-code
+Summary
+By ensuring your system CA certificates are updated, configuring Azure CLI to use the correct CA bundle, or as a last resort, bypassing SSL verification, you should be able to resolve the SSL certificate verification error. Remember that bypassing SSL verification can expose your connections to security risks and should only be used in controlled environments.
+
+---
+
+You can achieve this by creating a shell script that processes the two files as described. Here’s a step-by-step explanation and the complete script:
+
+1. **Read each line from the list file.**
+2. **Use `grep` to count the occurrences of the string in the other file.**
+3. **Based on the count, take appropriate actions:**
+   - If the count is zero, do nothing.
+   - If the count is one, copy the string to the output file.
+   - If the count is more than one, echo the string with a message.
+
+Here is the complete shell script:
+
+```sh
+#!/bin/bash
+
+# Check if the correct number of arguments is provided
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <list_file> <search_file>"
+    exit 1
+fi
+
+# Input files
+list_file="$1"
+search_file="$2"
+
+# Output file
+output_file="pruned_FQDN.txt"
+
+# Clear the output file if it already exists
+> "$output_file"
+
+# Read each line from the list file
+while IFS= read -r line
+do
+    # Count the number of occurrences of the string in the search file
+    count=$(grep -c "$line" "$search_file")
+
+    # Take action based on the count
+    if [ "$count" -eq 1 ]; then
+        echo "$line" >> "$output_file"
+    elif [ "$count" -gt 1 ]; then
+        echo "String '$line' found more than one occurrence ($count times)."
+    fi
+done < "$list_file"
+```
+
+### Explanation:
+
+1. **Input and Output Files:**
+   - `list_file`: The file containing the list of strings (one per line).
+   - `search_file`: The file in which we are searching for the strings.
+   - `output_file`: The file to which we write the strings that occur exactly once.
+
+2. **Clear the Output File:**
+   - `> "$output_file"`: Clears the content of the output file if it already exists.
+
+3. **Processing Each Line:**
+   - `while IFS= read -r line`: Reads each line from the list file. `IFS=` prevents trimming of leading/trailing whitespace and `-r` prevents backslash escapes from being interpreted.
+   - `count=$(grep -c "$line" "$search_file")`: Uses `grep -c` to count the occurrences of the current string in the search file.
+   - Based on the `count`, appropriate actions are taken:
+     - If `count` is 1, the string is appended to the `output_file`.
+     - If `count` is greater than 1, a message is echoed.
+
+### Usage:
+
+Save the script to a file, for example `prune_fqdn.sh`, and make it executable:
+
+```sh
+chmod +x prune_fqdn.sh
+```
+
+Run the script with the list file and the search file as arguments:
+
+```sh
+./prune_fqdn.sh list.txt search.txt
+```
+
+Replace `list.txt` with the path to your list file and `search.txt` with the path to your search file.
+
+This script will generate `pruned_FQDN.txt` containing strings that occur exactly once in the search file and will print a message for strings that occur more than once.
